@@ -1,7 +1,29 @@
+const std = @import("std");
+const testing = std.testing;
+
 pub const Vec = struct {
     x: isize,
     y: isize,
+
+    pub fn euclideanDistance(from: Vec, to: Vec) isize {
+        const dx = @intToFloat(f32, to.x - from.x);
+        const dy = @intToFloat(f32, to.y - from.y);
+        return @floatToInt(isize, std.math.hypot(f32, dx, dy));
+    }
 };
+
+pub fn vec(x: isize, y: isize) Vec {
+    return .{ .x = x, .y = y };
+}
+
+test "Vec euclidean distance" {
+    try testing.expectEqual(vec(0, 0).euclideanDistance(vec(5, 0)), 5);
+    try testing.expectEqual(vec(5, 0).euclideanDistance(vec(0, 0)), 5);
+    try testing.expectEqual(vec(0, 0).euclideanDistance(vec(0, 5)), 5);
+    try testing.expectEqual(vec(0, 5).euclideanDistance(vec(0, 0)), 5);
+    try testing.expectEqual(vec(0, 0).euclideanDistance(vec(5, 5)), 7);
+    try testing.expectEqual(vec(5, 5).euclideanDistance(vec(0, 0)), 7);
+}
 
 pub const Entity = struct {
     const Self = @This();
@@ -28,4 +50,5 @@ pub const Tile = struct {
     walkable: bool,
     transparent: bool,
     dark: Graphic,
+    light: Graphic,
 };

@@ -1,5 +1,7 @@
 const std = @import("std");
 const host = @import("host.zig");
+const types = @import("types.zig");
+const Vec = types.Vec;
 const testing = std.testing;
 
 var fmt_buffer: [1024]u8 = undefined;
@@ -49,14 +51,12 @@ const BresenhamIterator = struct {
         };
     }
 
-    const Step = struct { x: isize, y: isize };
-
-    pub fn next(self: *BresenhamIterator) ?Step {
+    pub fn next(self: *BresenhamIterator) ?Vec {
         if (self.dx == 0 and self.dy == 0) return null;
         if (self.iterations > 1000) return null;
         self.iterations += 1;
 
-        var point = Step{ .x = self.x, .y = self.y };
+        var point = Vec{ .x = self.x, .y = self.y };
 
         if (self.dx > self.dy) {
             if ((self.sx < 0 and self.x >= self.x1) or (self.sx >= 0 and self.x <= self.x1)) {
@@ -156,4 +156,103 @@ test "bresenhams double step diagonal" {
     try testing.expectEqual(iter.next(), .{ .x = 6, .y = 3 });
     try testing.expectEqual(iter.next(), .{ .x = 7, .y = 3 });
     try testing.expectEqual(iter.next(), null);
+}
+
+/// A data structure for holding a set of unique 2d coordinates (isize, isize).
+pub const PointSet = struct {
+    width: isize,
+    height: isize,
+    points: std.DynamicBitSet,
+    allocator: std.mem.Allocator,
+
+    pub fn init(width: usize, height: usize, allocator: std.mem.Allocator) !PointSet {
+        return .{
+            .width = @intCast(isize, width),
+            .height = @intCast(isize, height),
+            .allocator = allocator,
+            .points = try std.DynamicBitSet.initEmpty(allocator, width * height),
+        };
+    }
+
+    pub fn deinit(self: *PointSet) void {
+        self.points.deinit();
+    }
+
+    /// Translate x, y into an index that can be used with the internal bit set.
+    fn index(self: *PointSet, x: isize, y: isize) usize {
+        return @intCast(usize, x + y * self.width);
+    }
+
+    /// Remove all points from the set.
+    pub fn clear(self: *PointSet) void {
+        var i: usize = 0;
+        while (i < self.points.capacity()) : (i += 1) {
+            self.points.unset(i);
+        }
+    }
+
+    /// Add all possible points to the set.
+    pub fn fill(self: *PointSet) void {
+        var i: usize = 0;
+        while (i < self.points.capacity()) : (i += 1) {
+            self.points.set(i);
+        }
+    }
+
+    /// Remove a point from the set.
+    pub fn remove(self: *PointSet, x: isize, y: isize) void {
+        const i = self.index(x, y);
+        self.points.unset(i);
+    }
+
+    /// Add a point to the set.
+    pub fn add(self: *PointSet, x: isize, y: isize) void {
+        const i = self.index(x, y);
+        self.points.set(i);
+    }
+
+    /// Check whether the set contains a point.
+    pub fn has(self: *PointSet, x: isize, y: isize) bool {
+        const i = self.index(x, y);
+        return self.points.isSet(i);
+    }
+
+    /// Count the number of points currently set.
+    pub fn count(self: *PointSet) usize {
+        return self.points.count();
+    }
+};
+
+test "PointSet" {
+    var points = try PointSet.init(10, 10, testing.allocator);
+    defer points.deinit();
+
+    try testing.expectEqual(points.count(), 0);
+    try testing.expect(!points.has(0, 0));
+
+    points.add(1, 2);
+    try testing.expectEqual(points.count(), 1);
+    try testing.expect(points.has(1, 2));
+
+    points.remove(1, 2);
+    try testing.expectEqual(points.count(), 0);
+    try testing.expect(!points.has(1, 2));
+
+    points.add(1, 1);
+    points.add(2, 2);
+    points.add(3, 3);
+    points.add(3, 3);
+    try testing.expectEqual(points.count(), 3);
+
+    points.clear();
+    try testing.expectEqual(points.count(), 0);
+    try testing.expect(!points.has(1, 1));
+    try testing.expect(!points.has(2, 2));
+    try testing.expect(!points.has(3, 3));
+
+    points.fill();
+    try testing.expectEqual(points.count(), 100);
+    try testing.expect(points.has(1, 1));
+    try testing.expect(points.has(2, 2));
+    try testing.expect(points.has(3, 3));
 }

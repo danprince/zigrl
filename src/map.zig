@@ -1,16 +1,23 @@
 const std = @import("std");
 const types = @import("types.zig");
 const term = @import("term.zig");
+const utils = @import("utils.zig");
+const tile_types = @import("tiles.zig");
 const testing = std.testing;
+const shroud = tile_types.shroud;
 const Allocator = std.mem.Allocator;
 const Tile = types.Tile;
+const Graphic = types.Graphic;
 const Console = term.Console;
+const PointSet = utils.PointSet;
 
 pub const Map = struct {
     const Self = @This();
     width: usize,
     height: usize,
     tiles: []Tile,
+    visible: PointSet,
+    explored: PointSet,
     allocator: Allocator,
 
     pub fn init(width: usize, height: usize, initial_tile: Tile, allocator: Allocator) !Map {
@@ -21,12 +28,16 @@ pub const Map = struct {
             .width = width,
             .height = height,
             .tiles = tiles,
+            .visible = try PointSet.init(width, height, allocator),
+            .explored = try PointSet.init(width, height, allocator),
             .allocator = allocator,
         };
     }
 
     pub fn deinit(self: *Self) void {
         self.allocator.free(self.tiles);
+        self.visible.deinit();
+        self.explored.deinit();
     }
 
     /// Sets a tile inside the map. Assumes the coords are inside the bounds.
@@ -51,12 +62,15 @@ pub const Map = struct {
 
     /// Render the map to a console.
     pub fn render(self: *Self, console: *Console) void {
-        var y: usize = 0;
+        var y: isize = 0;
         while (y < self.height) : (y += 1) {
-            var x: usize = 0;
+            var x: isize = 0;
             while (x < self.width) : (x += 1) {
-                var tile = self.tiles[x + y * self.width];
-                console.put(@intCast(isize, x), @intCast(isize, y), tile.dark.fg, tile.dark.bg, tile.dark.ch);
+                const tile = self.getTile(x, y);
+                const visible = self.visible.has(x, y);
+                const explored = self.explored.has(x, y);
+                const graphic = if (visible) tile.light else if (explored) tile.dark else shroud;
+                console.put(@intCast(isize, x), @intCast(isize, y), graphic.fg, graphic.bg, graphic.ch);
             }
         }
     }
@@ -66,12 +80,14 @@ const test_tile = Tile{
     .walkable = true,
     .transparent = true,
     .dark = .{ .ch = ' ', .fg = 0, .bg = 0 },
+    .light = .{ .ch = ' ', .fg = 0, .bg = 0 },
 };
 
 const test_tile_2 = Tile{
     .walkable = false,
     .transparent = false,
     .dark = .{ .ch = ' ', .fg = 0, .bg = 0 },
+    .light = .{ .ch = ' ', .fg = 0, .bg = 0 },
 };
 
 test "Map.init / Map.deinit" {
