@@ -1,0 +1,13 @@
+# Zig stuff
+zig-cache/
+zig-out/
+build/
+build-*/
+docgen_tmp/
+
+# Web stuff
+web/dist
+node_modules
+
+# Misc stuff
+.DS_store
