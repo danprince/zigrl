@@ -13,11 +13,14 @@ pub const Map = struct {
     tiles: []Tile,
     allocator: Allocator,
 
-    pub fn init(width: usize, height: usize, allocator: Allocator) !Map {
+    pub fn init(width: usize, height: usize, initial_tile: Tile, allocator: Allocator) !Map {
+        var tiles = try allocator.alloc(Tile, width * height);
+        for (tiles) |*tile| tile.* = initial_tile;
+
         return .{
             .width = width,
             .height = height,
-            .tiles = try allocator.alloc(Tile, width * height),
+            .tiles = tiles,
             .allocator = allocator,
         };
     }
@@ -59,18 +62,30 @@ pub const Map = struct {
     }
 };
 
+const test_tile = Tile{
+    .walkable = true,
+    .transparent = true,
+    .dark = .{ .ch = ' ', .fg = 0, .bg = 0 },
+};
+
+const test_tile_2 = Tile{
+    .walkable = false,
+    .transparent = false,
+    .dark = .{ .ch = ' ', .fg = 0, .bg = 0 },
+};
+
 test "Map.init / Map.deinit" {
-    var map = try Map.init(10, 10, testing.allocator);
+    var map = try Map.init(10, 10, test_tile, testing.allocator);
     defer map.deinit();
 }
 
 test "Map.init out of memory" {
-    var err = Map.init(100, 100, testing.failing_allocator);
+    var err = Map.init(100, 100, test_tile, testing.failing_allocator);
     try testing.expectError(Allocator.Error.OutOfMemory, err);
 }
 
 test "Map.inBounds" {
-    var map = try Map.init(2, 3, testing.allocator);
+    var map = try Map.init(2, 3, test_tile, testing.allocator);
     defer map.deinit();
     try testing.expect(map.inBounds(0, 0));
     try testing.expect(map.inBounds(1, 2));
@@ -82,27 +97,23 @@ test "Map.inBounds" {
     try testing.expect(!map.inBounds(0, 3));
 }
 
-const test_tile = Tile{
-    .walkable = true,
-    .transparent = true,
-    .dark = .{
-        .ch = ' ',
-        .fg = 0,
-        .bg = 0,
-    },
-};
-
-test "Map.setTile / Map.getTile" {
-    var map = try Map.init(10, 10, testing.allocator);
+test "Map.getTile" {
+    var map = try Map.init(10, 10, test_tile, testing.allocator);
     defer map.deinit();
-    map.setTile(5, 5, test_tile);
     try testing.expectEqual(map.getTile(5, 5).*, test_tile);
 }
 
-test "Map.getTileOrNull" {
-    var map = try Map.init(10, 10, testing.allocator);
+test "Map.setTile" {
+    var map = try Map.init(10, 10, test_tile, testing.allocator);
     defer map.deinit();
-    map.setTile(5, 5, test_tile);
+    map.setTile(5, 5, test_tile_2);
+    try testing.expectEqual(map.getTile(5, 5).*, test_tile_2);
+    try testing.expectEqual(map.getTile(4, 4).*, test_tile);
+}
+
+test "Map.getTileOrNull" {
+    var map = try Map.init(10, 10, test_tile, testing.allocator);
+    defer map.deinit();
     try testing.expectEqual(map.getTileOrNull(-1, 0), null);
     try testing.expectEqual(map.getTileOrNull(0, 12), null);
     try testing.expectEqual(map.getTileOrNull(5, 5).?.*, test_tile);
