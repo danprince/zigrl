@@ -6,23 +6,27 @@ const errors = @import("errors.zig");
 const input = @import("input.zig");
 const types = @import("types.zig");
 const engine = @import("engine.zig");
+const gamemap = @import("map.zig");
 const testing = std.testing;
 const Entity = types.Entity;
 const Terminal = term.Terminal;
+const Map = gamemap.Map;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var terminal: term.Terminal = undefined;
 
 export fn onInit() void {
-    terminal = Terminal.init(80, 50, gpa.allocator()) catch errors.crash("Could not initialize terminal");
-    const event_handler = input.EventHandler{};
     const player = Entity{
         .char = '@',
         .color = 0xFFFFFF,
         .x = @intCast(isize, terminal.width / 2),
         .y = @intCast(isize, terminal.height / 2),
     };
-    engine.init(event_handler, player) catch errors.crash("Could not initialize engine!");
+    const event_handler = input.EventHandler{};
+    const map = Map.init(80, 45, gpa.allocator()) catch errors.crash("Could not initialize the map");
+    engine.init(event_handler, map, player) catch errors.crash("Could not initialize engine!");
+
+    terminal = Terminal.init(80, 50, gpa.allocator()) catch errors.crash("Could not initialize terminal");
     host.initTerm(terminal.width, terminal.height);
 }
 
@@ -52,4 +56,5 @@ pub fn log(comptime _: std.log.Level, comptime _: @Type(.EnumLiteral), comptime 
 
 test {
     _ = @import("colors.zig");
+    _ = @import("map.zig");
 }
