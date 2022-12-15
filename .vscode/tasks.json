@@ -5,7 +5,8 @@
 			"label": "Serve",
 			"type": "shell",
 			"command": "./serve.sh",
-			"group": "none"
+			"group": "none",
+			"problemMatcher": []
 		},
 		{
 			"label": "Build",
@@ -39,9 +40,9 @@
 				"clear": true
 			},
 			"group": {
-        "kind": "test",
-        "isDefault": true
-      }
+				"kind": "test",
+				"isDefault": true
+			}
 		}
 	]
 }
