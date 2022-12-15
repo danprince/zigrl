@@ -11,3 +11,16 @@ pub const Entity = struct {
         self.y += dy;
     }
 };
+
+pub const Graphic = struct {
+    ch: u8,
+    fg: ?i32,
+    bg: ?i32,
+};
+
+pub const Tile = struct {
+    const Self = @This();
+    walkable: bool,
+    transparent: bool,
+    dark: Graphic,
+};

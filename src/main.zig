@@ -49,3 +49,7 @@ export fn onPointerDown(x: isize, y: isize) void {
 pub fn log(comptime _: std.log.Level, comptime _: @Type(.EnumLiteral), comptime format: []const u8, args: anytype) void {
     utils.print(format, args);
 }
+
+test {
+    _ = @import("colors.zig");
+}
