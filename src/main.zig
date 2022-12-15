@@ -8,6 +8,7 @@ const types = @import("types.zig");
 const tiles = @import("tiles.zig");
 const engine = @import("engine.zig");
 const gamemap = @import("map.zig");
+const procgen = @import("procgen.zig");
 const testing = std.testing;
 const Entity = types.Entity;
 const Terminal = term.Terminal;
@@ -16,23 +17,28 @@ const Map = gamemap.Map;
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var terminal: term.Terminal = undefined;
 
-fn init() !void {
-    const player = Entity{
-        .char = '@',
-        .color = 0xFFFFFF,
-        .x = @intCast(isize, terminal.width / 2),
-        .y = @intCast(isize, terminal.height / 2),
-    };
+fn init(seed: u64) !void {
+    var player = Entity{ .char = '@', .color = 0xFFFFFF };
     const event_handler = input.EventHandler{};
-    var map = try Map.init(80, 45, tiles.floor, gpa.allocator());
-    map.setTile(30, 22, tiles.wall);
+
+    var map = try procgen.generateDungeon(.{
+        .seed = seed,
+        .map_width = 80,
+        .map_height = 45,
+        .room_max_size = 10,
+        .room_min_size = 6,
+        .max_rooms = 30,
+        .player = &player,
+        .allocator = gpa.allocator(),
+    });
+
     try engine.init(event_handler, map, player);
     terminal = try Terminal.init(80, 50, gpa.allocator());
     host.initTerm(terminal.width, terminal.height);
 }
 
-export fn onInit() void {
-    init() catch errors.crash("Could not initialize game!");
+export fn onInit(seed: u32) void {
+    init(seed) catch errors.crash("Could not initialize game!");
 }
 
 export fn onFrame() void {

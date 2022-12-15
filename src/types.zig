@@ -1,3 +1,8 @@
+pub const Vec = struct {
+    x: isize,
+    y: isize,
+};
+
 pub const Entity = struct {
     const Self = @This();
 
