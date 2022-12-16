@@ -4,6 +4,7 @@ const types = @import("types.zig");
 const input = @import("input.zig");
 const term = @import("term.zig");
 const gamemap = @import("map.zig");
+const widgets = @import("widgets.zig");
 const actions = @import("actions.zig");
 const testing = std.testing;
 const Allocator = std.mem.Allocator;
@@ -82,6 +83,11 @@ pub fn render(console: *Console) void {
     map.render(console);
 
     if (player.fighter) |fighter| {
-        console.print(1, 47, 0xFFFFFF, null, "HP: {d}/{d}", .{ fighter.hp, fighter.max_hp });
+        widgets.renderBar(
+            console,
+            fighter.hp,
+            fighter.max_hp,
+            20,
+        );
     }
 }
