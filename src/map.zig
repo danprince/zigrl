@@ -61,6 +61,13 @@ pub const Map = struct {
         utils.print("add entity {*} to {*} ({d})", .{ self, entity, self.entities.items.len });
     }
 
+    /// Adds an entity to the map at specific coordinates.
+    pub fn addEntityAt(self: *Self, x: isize, y: isize, entity: *Entity) !void {
+        entity.x = x;
+        entity.y = y;
+        try self.addEntity(entity);
+    }
+
     /// Sets a tile inside the map. Assumes the coords are inside the bounds.
     pub fn setTile(self: *Self, x: isize, y: isize, tile: Tile) void {
         self.tiles[@intCast(usize, x) + @intCast(usize, y) * self.width] = tile;
@@ -79,6 +86,17 @@ pub const Map = struct {
     /// Returns true if x and y are inside the bounds of this map.
     pub fn inBounds(self: *Self, x: isize, y: isize) bool {
         return x >= 0 and y >= 0 and x < self.width and y < self.height;
+    }
+
+    /// Returns the first entity at given coordinates. There may be multiple
+    /// entities here, but this method just returns the first.
+    pub fn getFirstEntityAt(self: *Self, x: isize, y: isize) ?*Entity {
+        for (self.entities.items) |entity| {
+            if (entity.x == x and entity.y == y) {
+                return entity;
+            }
+        }
+        return null;
     }
 
     /// Render the map to a console.
@@ -176,4 +194,34 @@ test "Map.getTileOrNull" {
     try testing.expectEqual(map.getTileOrNull(-1, 0), null);
     try testing.expectEqual(map.getTileOrNull(0, 12), null);
     try testing.expectEqual(map.getTileOrNull(5, 5).?.*, test_tile);
+}
+
+test "Map.addEntity" {
+    var map = try Map.init(.{ .width = 10, .height = 10, .initial_tile = test_tile, .allocator = testing.allocator });
+    defer map.deinit();
+    try testing.expectEqual(map.entities.items.len, 0);
+    var entity = Entity{ .name = "Foo", .char = 'F', .color = 0xFF0000 };
+    try map.addEntity(&entity);
+    try testing.expectEqual(map.entities.items.len, 1);
+    try testing.expectEqual(map.entities.items[0], &entity);
+}
+
+test "Map.addEntityAt" {
+    var map = try Map.init(.{ .width = 10, .height = 10, .initial_tile = test_tile, .allocator = testing.allocator });
+    defer map.deinit();
+    var entity = Entity{ .name = "Foo", .char = 'F', .color = 0xFF0000 };
+    try map.addEntityAt(1, 2, &entity);
+    try testing.expectEqual(map.entities.items.len, 1);
+    try testing.expectEqual(map.entities.items[0], &entity);
+    try testing.expectEqual(entity.x, 1);
+    try testing.expectEqual(entity.y, 2);
+}
+
+test "Map.getFirstEntityAt" {
+    var map = try Map.init(.{ .width = 10, .height = 10, .initial_tile = test_tile, .allocator = testing.allocator });
+    defer map.deinit();
+    var entity = Entity{ .name = "Foo", .char = 'F', .color = 0xFF0000, .x = 1, .y = 2 };
+    try map.addEntity(&entity);
+    try testing.expectEqual(map.getFirstEntityAt(0, 0), null);
+    try testing.expectEqual(map.getFirstEntityAt(1, 2), &entity);
 }
