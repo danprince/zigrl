@@ -33,20 +33,9 @@ pub fn init(params: EngineParams) !void {
     player = params.player;
     player.init();
     try map.addEntity(&player);
-    updateFieldOfView();
 }
 
-pub fn handleEvent(event: InputEvent) void {
-    var maybe_action = event_handler.dispatch(event);
-
-    if (maybe_action) |action| {
-        actions.perform(action, &player);
-        handleEnemyTurns();
-        updateFieldOfView();
-    }
-}
-
-fn handleEnemyTurns() void {
+pub fn handleEnemyTurns() void {
     for (map.entities.items) |entity| {
         //if (entity == &player) continue;
         utils.print("The {s} wonders when it will get to take a real turn.", .{entity.name});

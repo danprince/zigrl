@@ -1,4 +1,5 @@
 const actions = @import("actions.zig");
+const engine = @import("engine.zig");
 const Action = actions.Action;
 
 const keys = struct {
@@ -23,7 +24,7 @@ pub const InputEvent = union(InputEventType) {
 pub const EventHandler = struct {
     const Self = @This();
 
-    pub fn dispatch(_: *Self, event: InputEvent) ?Action {
+    fn dispatch(_: *Self, event: InputEvent) ?Action {
         return switch (event) {
             .keydown => |key| switch (key) {
                 keys.left_arrow => actions.bump(-1, 0),
@@ -34,5 +35,15 @@ pub const EventHandler = struct {
             },
             else => null,
         };
+    }
+
+    pub fn handleEvent(self: *Self, event: InputEvent) void {
+        var maybe_action = self.dispatch(event);
+
+        if (maybe_action) |action| {
+            actions.perform(action, &engine.player);
+            engine.handleEnemyTurns();
+            engine.updateFieldOfView();
+        }
     }
 };

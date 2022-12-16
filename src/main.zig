@@ -42,6 +42,8 @@ fn init(seed: u64) !void {
         .allocator = gpa.allocator(),
     });
 
+    engine.updateFieldOfView();
+
     terminal = try Terminal.init(80, 50, gpa.allocator());
     host.initTerm(terminal.width, terminal.height);
 }
@@ -58,15 +60,15 @@ export fn onFrame() void {
 }
 
 export fn onKeyDown(key: u8) void {
-    engine.handleEvent(.{ .keydown = key });
+    engine.event_handler.handleEvent(.{ .keydown = key });
 }
 
 export fn onPointerMove(x: isize, y: isize) void {
-    engine.handleEvent(.{ .pointermove = .{ .x = x, .y = y } });
+    engine.event_handler.handleEvent(.{ .pointermove = .{ .x = x, .y = y } });
 }
 
 export fn onPointerDown(x: isize, y: isize) void {
-    engine.handleEvent(.{ .pointerdown = .{ .x = x, .y = y } });
+    engine.event_handler.handleEvent(.{ .pointerdown = .{ .x = x, .y = y } });
 }
 
 /// Freestanding target needs a default log implementation.
