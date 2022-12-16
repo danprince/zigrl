@@ -123,9 +123,9 @@ test "Map.init / Map.deinit" {
 }
 
 test "Map.init with entities" {
-    var a = Entity{ .char = 'a', .color = 0x00FF00 };
-    var b = Entity{ .char = 'b', .color = 0x00FF00 };
-    var c = Entity{ .char = 'c', .color = 0x00FF00 };
+    var a = Entity{ .char = 'a', .color = 0x00FF00, .name = "a" };
+    var b = Entity{ .char = 'b', .color = 0x00FF00, .name = "b" };
+    var c = Entity{ .char = 'c', .color = 0x00FF00, .name = "c" };
 
     var map = try Map.init(.{
         .width = 10,

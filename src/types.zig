@@ -33,6 +33,8 @@ pub const Entity = struct {
     y: isize = 0,
     char: u8,
     color: ?i32,
+    name: []const u8,
+    blocks_movement: bool = false,
 
     pub fn init(self: *Self) void {
         _ = self;

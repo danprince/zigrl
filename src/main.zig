@@ -8,9 +8,9 @@ const types = @import("types.zig");
 const tiles = @import("tiles.zig");
 const engine = @import("engine.zig");
 const gamemap = @import("map.zig");
+const entities = @import("entities.zig");
 const procgen = @import("procgen.zig");
 const testing = std.testing;
-const Entity = types.Entity;
 const Terminal = term.Terminal;
 const Map = gamemap.Map;
 
@@ -18,8 +18,7 @@ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var terminal: term.Terminal = undefined;
 
 fn init(seed: u64) !void {
-    var player = Entity{ .char = '@', .color = 0xFFFFFF };
-    var npc = Entity{ .char = '@', .color = 0xFFFF00 };
+    var player = entities.player;
 
     var map = try procgen.generateDungeon(.{
         .seed = seed,
@@ -39,9 +38,10 @@ fn init(seed: u64) !void {
         .event_handler = input.EventHandler{},
     });
 
-    npc.x = player.x + 2;
-    npc.y = player.y;
-    try engine.map.addEntity(npc.spawn());
+    var orc = entities.orc.spawn();
+    orc.x = player.x + 2;
+    orc.y = player.y;
+    try engine.map.addEntity(orc);
 
     terminal = try Terminal.init(80, 50, gpa.allocator());
     host.initTerm(terminal.width, terminal.height);
