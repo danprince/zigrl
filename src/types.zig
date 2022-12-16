@@ -36,10 +36,14 @@ pub const Entity = struct {
     name: []const u8,
     blocks_movement: bool = false,
 
+    /// Called internally when the entity is added to the engine. Use `spawn`
+    /// instead of init'ing entities yourself.
     pub fn init(self: *Self) void {
         _ = self;
     }
 
+    /// Adds a copy of this entity into the engine and returns a pointer to it.
+    /// Does not modify the entity that it is called on.
     pub fn spawn(self: Self) *Entity {
         var entity_ptr = engine.initEntity(self);
         return entity_ptr;
