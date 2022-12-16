@@ -1,6 +1,7 @@
 const types = @import("types.zig");
 const engine = @import("engine.zig");
 const utils = @import("utils.zig");
+const colors = @import("colors.zig");
 const Entity = types.Entity;
 
 pub const ActionType = enum {
@@ -65,10 +66,12 @@ pub fn perform(action: Action, entity: *Entity) void {
                     if (target.fighter) |*target_fighter| {
                         const max_damage = entity_fighter.power - target_fighter.defense;
                         const damage = target_fighter.damage(max_damage);
+                        const color = if (entity == &engine.player) colors.player_atk else colors.enemy_atk;
+
                         if (damage > 0) {
-                            utils.print("{s} attacks {s} for {d} hit points.", .{ entity.name, target.name, damage });
+                            engine.message_log.print("{s} attacks {s} for {d} hit points.", .{ entity.name, target.name, damage }, color);
                         } else {
-                            utils.print("{s} attacks {s} but does no damage.", .{ entity.name, target.name });
+                            engine.message_log.print("{s} attacks {s} but does no damage.", .{ entity.name, target.name }, color);
                         }
                     }
                 }

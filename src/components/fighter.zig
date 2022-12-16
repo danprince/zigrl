@@ -40,10 +40,10 @@ pub fn die(self: *Self) void {
     self.entity.render_order = .corpse;
 
     if (self.entity == &engine.player) {
-        utils.print("You died!", .{});
+        engine.message_log.add("You died!", colors.player_die);
         engine.event_handler = .gameover;
     } else {
-        utils.print("{s} is dead!", .{self.entity.name});
+        engine.message_log.print("{s} is dead!", .{self.entity.name}, colors.enemy_die);
     }
 }
 
