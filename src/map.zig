@@ -99,6 +99,17 @@ pub const Map = struct {
         return null;
     }
 
+    /// Returns the blocking entity a given coordinates. In theory there can
+    /// only be one blocking entity per tile.
+    pub fn getBlockingEntityAt(self: *Self, x: isize, y: isize) ?*Entity {
+        for (self.entities.items) |entity| {
+            if (entity.x == x and entity.y == y and entity.blocks_movement) {
+                return entity;
+            }
+        }
+        return null;
+    }
+
     /// Render the map to a console.
     pub fn render(self: *Self, console: *Console) void {
         var y: isize = 0;
@@ -220,8 +231,20 @@ test "Map.addEntityAt" {
 test "Map.getFirstEntityAt" {
     var map = try Map.init(.{ .width = 10, .height = 10, .initial_tile = test_tile, .allocator = testing.allocator });
     defer map.deinit();
-    var entity = Entity{ .name = "Foo", .char = 'F', .color = 0xFF0000, .x = 1, .y = 2 };
-    try map.addEntity(&entity);
+    var entity_1 = Entity{ .name = "Foo", .char = 'F', .color = 0xFF0000, .x = 1, .y = 2 };
+    var entity_2 = Entity{ .name = "Foo", .char = 'F', .color = 0xFF0000, .x = 1, .y = 2 };
+    try map.addEntity(&entity_1);
+    try map.addEntity(&entity_2);
     try testing.expectEqual(map.getFirstEntityAt(0, 0), null);
-    try testing.expectEqual(map.getFirstEntityAt(1, 2), &entity);
+    try testing.expectEqual(map.getFirstEntityAt(1, 2), &entity_1);
+}
+
+test "Map.getBlockingEntityAt" {
+    var map = try Map.init(.{ .width = 10, .height = 10, .initial_tile = test_tile, .allocator = testing.allocator });
+    defer map.deinit();
+    var non_blocker = Entity{ .name = "Foo", .char = 'F', .color = 0xFF0000, .x = 1, .y = 2, .blocks_movement = false };
+    var blocker = Entity{ .name = "Foo", .char = 'F', .color = 0xFF0000, .x = 1, .y = 2, .blocks_movement = true };
+    try map.addEntity(&non_blocker);
+    try map.addEntity(&blocker);
+    try testing.expectEqual(map.getBlockingEntityAt(1, 2), &blocker);
 }
