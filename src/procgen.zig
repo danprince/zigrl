@@ -3,6 +3,7 @@ const utils = @import("utils.zig");
 const types = @import("types.zig");
 const tiles = @import("tiles.zig");
 const gamemap = @import("map.zig");
+const entities = @import("entities.zig");
 const testing = std.testing;
 const prng = std.rand.DefaultPrng;
 const Allocator = std.mem.Allocator;
@@ -57,6 +58,7 @@ const DungeonParams = struct {
     max_rooms: isize,
     room_min_size: isize,
     room_max_size: isize,
+    max_monsters_per_room: usize,
     player: *Entity,
     allocator: Allocator,
 };
@@ -98,6 +100,9 @@ pub fn generateDungeon(params: DungeonParams) !Map {
         // Dig out floor for this room
         digRect(&dungeon, x, y, room_width, room_height);
 
+        // Spawn entities in this room
+        try placeEntities(&dungeon, rng, room, params.max_monsters_per_room);
+
         try rooms.append(room);
     }
 
@@ -125,6 +130,23 @@ fn digRect(dungeon: *Map, x: isize, y: isize, w: isize, h: isize) void {
         var i: isize = x;
         while (i < x + w) : (i += 1) {
             dungeon.setTile(i, j, tiles.floor);
+        }
+    }
+}
+
+fn placeEntities(dungeon: *Map, rng: std.rand.Random, room: RectangularRoom, maximum_monsters: usize) !void {
+    const number_of_monsters = rng.intRangeAtMost(usize, 0, maximum_monsters);
+
+    var i: usize = 0;
+    while (i < number_of_monsters) : (i += 1) {
+        const x = rng.intRangeAtMost(isize, room.x1 + 1, room.x2 - 1);
+        const y = rng.intRangeAtMost(isize, room.y1 + 1, room.y2 - 1);
+        if (dungeon.getFirstEntityAt(x, y) != null) continue;
+
+        if (rng.float(f32) < 0.8) {
+            try dungeon.addEntityAt(x, y, entities.orc.spawn());
+        } else {
+            try dungeon.addEntityAt(x, y, entities.troll.spawn());
         }
     }
 }
