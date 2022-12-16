@@ -64,7 +64,13 @@ const DungeonParams = struct {
 };
 
 pub fn generateDungeon(params: DungeonParams) !Map {
-    var dungeon = try Map.init(.{ .width = params.map_width, .height = params.map_height, .initial_tile = tiles.wall, .allocator = params.allocator });
+    var dungeon = try Map.init(.{
+        .width = params.map_width,
+        .height = params.map_height,
+        .initial_tile = tiles.wall,
+        .allocator = params.allocator,
+    });
+
     var rnd = std.rand.DefaultPrng.init(params.seed);
     var rng = rnd.random();
 
@@ -94,14 +100,14 @@ pub fn generateDungeon(params: DungeonParams) !Map {
         } else {
             const p1 = room.center();
             const p2 = rooms.items[rooms.items.len - 1].center();
-            digTunnel(&dungeon, rng, p1.x, p1.y, p2.x, p2.y);
+            digTunnel(&dungeon, &rng, p1.x, p1.y, p2.x, p2.y);
         }
 
         // Dig out floor for this room
         digRect(&dungeon, x, y, room_width, room_height);
 
         // Spawn entities in this room
-        try placeEntities(&dungeon, rng, room, params.max_monsters_per_room);
+        try placeEntities(&dungeon, &rng, room, params.max_monsters_per_room);
 
         try rooms.append(room);
     }
@@ -109,7 +115,7 @@ pub fn generateDungeon(params: DungeonParams) !Map {
     return dungeon;
 }
 
-fn digTunnel(dungeon: *Map, rng: std.rand.Random, x1: isize, y1: isize, x2: isize, y2: isize) void {
+fn digTunnel(dungeon: *Map, rng: *std.rand.Random, x1: isize, y1: isize, x2: isize, y2: isize) void {
     var corner_x = x1;
     var corner_y = y2;
 
@@ -134,7 +140,7 @@ fn digRect(dungeon: *Map, x: isize, y: isize, w: isize, h: isize) void {
     }
 }
 
-fn placeEntities(dungeon: *Map, rng: std.rand.Random, room: RectangularRoom, maximum_monsters: usize) !void {
+fn placeEntities(dungeon: *Map, rng: *std.rand.Random, room: RectangularRoom, maximum_monsters: usize) !void {
     const number_of_monsters = rng.intRangeAtMost(usize, 0, maximum_monsters);
 
     var i: usize = 0;
