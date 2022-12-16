@@ -5,31 +5,53 @@ const input = @import("input.zig");
 const term = @import("term.zig");
 const gamemap = @import("map.zig");
 const actions = @import("actions.zig");
+const Allocator = std.mem.Allocator;
 const Vec = types.Vec;
 const Console = term.Console;
 const Entity = types.Entity;
 const InputEvent = input.InputEvent;
 const EventHandler = input.EventHandler;
-const EntityList = std.SinglyLinkedList(Entity);
 const Map = gamemap.Map;
 
-pub var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-pub var allocator = gpa.allocator();
-
-var entity_list: EntityList = undefined;
-var active_entities: std.ArrayList(*Entity) = undefined;
-var event_handler: EventHandler = undefined;
+pub var allocator: Allocator = undefined;
+var entity_array: []Entity = undefined;
+var entity_index: usize = 0;
+pub var event_handler: EventHandler = undefined;
 pub var player: Entity = undefined;
 pub var map: gamemap.Map = undefined;
 
-pub fn init(initial_event_handler: EventHandler, initial_map: Map, initial_player: Entity) !void {
-    event_handler = initial_event_handler;
-    entity_list = EntityList{};
-    active_entities = std.ArrayList(*Entity).init(gpa.allocator());
-    map = initial_map;
-    player = initial_player;
-    try active_entities.append(&player);
+const EngineParams = struct {
+    event_handler: EventHandler,
+    map: Map,
+    player: Entity,
+    allocator: Allocator,
+};
+
+pub fn init(params: EngineParams) !void {
+    allocator = params.allocator;
+    player = params.player;
+    event_handler = params.event_handler;
+    entity_array = try allocator.alloc(Entity, 256);
+    map = params.map;
+    player = params.player;
+    player.init();
+    try map.addEntity(&player);
     updateFieldOfView();
+}
+
+/// Initialises an entity within the engine and returns a pointer to it.
+pub fn initEntity(entity: Entity) *Entity {
+    // Ensure that there's enough memory allocated in the entity array
+    while (entity_index >= entity_array.len) {
+        _ = allocator.resize(entity_array, entity_array.len * 2);
+    }
+
+    entity_array[entity_index] = entity;
+    var ptr = &entity_array[entity_index];
+    entity_index += 1;
+
+    ptr.init();
+    return ptr;
 }
 
 pub fn handleEvent(event: InputEvent) void {
@@ -39,10 +61,6 @@ pub fn handleEvent(event: InputEvent) void {
         actions.perform(action, &player);
         updateFieldOfView();
     }
-}
-
-pub fn entities() []*Entity {
-    return active_entities.items;
 }
 
 /// Recompute the visible area based on the player's point of view.
@@ -78,10 +96,4 @@ pub fn updateFieldOfView() void {
 
 pub fn render(console: *Console) void {
     map.render(console);
-
-    for (entities()) |entity| {
-        if (map.visible.has(entity.x, entity.y)) {
-            console.put(entity.x, entity.y, entity.color, null, entity.char);
-        }
-    }
 }

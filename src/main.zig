@@ -19,7 +19,7 @@ var terminal: term.Terminal = undefined;
 
 fn init(seed: u64) !void {
     var player = Entity{ .char = '@', .color = 0xFFFFFF };
-    const event_handler = input.EventHandler{};
+    var npc = Entity{ .char = '@', .color = 0xFFFF00 };
 
     var map = try procgen.generateDungeon(.{
         .seed = seed,
@@ -32,7 +32,17 @@ fn init(seed: u64) !void {
         .allocator = gpa.allocator(),
     });
 
-    try engine.init(event_handler, map, player);
+    try engine.init(.{
+        .map = map,
+        .player = player,
+        .allocator = gpa.allocator(),
+        .event_handler = input.EventHandler{},
+    });
+
+    npc.x = player.x + 2;
+    npc.y = player.y;
+    try engine.map.addEntity(npc.spawn());
+
     terminal = try Terminal.init(80, 50, gpa.allocator());
     host.initTerm(terminal.width, terminal.height);
 }

@@ -62,7 +62,7 @@ const DungeonParams = struct {
 };
 
 pub fn generateDungeon(params: DungeonParams) !Map {
-    var dungeon = try Map.init(params.map_width, params.map_height, tiles.wall, params.allocator);
+    var dungeon = try Map.init(.{ .width = params.map_width, .height = params.map_height, .initial_tile = tiles.wall, .allocator = params.allocator });
     var rnd = std.rand.DefaultPrng.init(params.seed);
     var rng = rnd.random();
 

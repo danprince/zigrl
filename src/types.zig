@@ -1,4 +1,5 @@
 const std = @import("std");
+const engine = @import("engine.zig");
 const testing = std.testing;
 
 pub const Vec = struct {
@@ -32,6 +33,15 @@ pub const Entity = struct {
     y: isize = 0,
     char: u8,
     color: ?i32,
+
+    pub fn init(self: *Self) void {
+        _ = self;
+    }
+
+    pub fn spawn(self: Self) *Entity {
+        var entity_ptr = engine.initEntity(self);
+        return entity_ptr;
+    }
 
     pub fn move(self: *Self, dx: isize, dy: isize) void {
         self.x += dx;
