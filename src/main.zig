@@ -61,7 +61,7 @@ export fn onInit(seed: u32) void {
 export fn onFrame() void {
     terminal.reset();
     var root_console = terminal.root();
-    engine.render(&root_console);
+    engine.event_handler.render(&root_console);
     host.flushTerm(terminal.buffer.ptr, terminal.buffer.len);
 }
 
