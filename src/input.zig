@@ -1,6 +1,9 @@
 const actions = @import("actions.zig");
 const engine = @import("engine.zig");
+const term = @import("term.zig");
+const utils = @import("utils.zig");
 const Action = actions.Action;
+const Console = term.Console;
 
 const keys = struct {
     // Arrow keys
@@ -47,6 +50,7 @@ pub const EventHandler = union(Mode) {
     fn dispatch(self: Self, event: InputEvent) ?Action {
         return switch (event) {
             .keydown => |key| self.onKeyDown(key),
+            .pointermove => |pos| self.onMouseMove(pos.x, pos.y),
             else => null,
         };
     }
@@ -69,6 +73,12 @@ pub const EventHandler = union(Mode) {
         };
     }
 
+    fn onMouseMove(_: Self, x: isize, y: isize) ?Action {
+        engine.mouse_location.x = x;
+        engine.mouse_location.y = y;
+        return null;
+    }
+
     pub fn handleEvent(self: Self, event: InputEvent) void {
         var maybe_action = self.dispatch(event);
 
@@ -77,6 +87,12 @@ pub const EventHandler = union(Mode) {
             engine.handleEnemyTurns();
             engine.updateRenderOrder();
             engine.updateFieldOfView();
+        }
+    }
+
+    pub fn render(self: Self, console: *Console) void {
+        switch (self) {
+            else => engine.render(console),
         }
     }
 };

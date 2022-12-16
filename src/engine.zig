@@ -22,6 +22,7 @@ pub var event_handler: EventHandler = undefined;
 pub var player: Entity = undefined;
 pub var map: gamemap.Map = undefined;
 pub var message_log: MessageLog = undefined;
+pub var mouse_location: Vec = .{ .x = 0, .y = 0 };
 
 const EngineParams = struct {
     event_handler: EventHandler,
@@ -96,4 +97,6 @@ pub fn render(console: *Console) void {
             20,
         );
     }
+
+    widgets.renderNamesAtMouseLocation(console, 21, 44);
 }
