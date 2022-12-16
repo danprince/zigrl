@@ -36,12 +36,24 @@ pub const InputEvent = union(InputEventType) {
     pointerdown: struct { x: isize, y: isize },
 };
 
-pub const EventHandler = struct {
+pub const Mode = enum { main, gameover };
+
+pub const EventHandler = union(Mode) {
     const Self = @This();
 
-    fn dispatch(_: *Self, event: InputEvent) ?Action {
+    main: void,
+    gameover: void,
+
+    fn dispatch(self: Self, event: InputEvent) ?Action {
         return switch (event) {
-            .keydown => |key| switch (key) {
+            .keydown => |key| self.onKeyDown(key),
+            else => null,
+        };
+    }
+
+    fn onKeyDown(self: Self, key: usize) ?Action {
+        return switch (self) {
+            .main => switch (key) {
                 keys.space, keys.period => actions.wait(),
                 keys.h, keys.left_arrow => actions.bump(-1, 0),
                 keys.l, keys.right_arrow => actions.bump(1, 0),
@@ -57,7 +69,7 @@ pub const EventHandler = struct {
         };
     }
 
-    pub fn handleEvent(self: *Self, event: InputEvent) void {
+    pub fn handleEvent(self: Self, event: InputEvent) void {
         var maybe_action = self.dispatch(event);
 
         if (maybe_action) |action| {

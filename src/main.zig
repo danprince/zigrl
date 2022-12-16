@@ -38,7 +38,7 @@ fn init(seed: u64) !void {
     try engine.init(.{
         .player = player,
         .map = map,
-        .event_handler = input.EventHandler{},
+        .event_handler = .main,
         .allocator = gpa.allocator(),
     });
 

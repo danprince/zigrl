@@ -27,7 +27,7 @@ pub fn deinit(self: *Self) void {
 pub fn setHP(self: *Self, amount: isize) void {
     self.hp = std.math.clamp(amount, 0, self.max_hp);
 
-    if (self.hp == 0 and self.entity.ai != null) {
+    if (self.hp == 0) {
         self.die();
     }
 }
@@ -41,6 +41,7 @@ pub fn die(self: *Self) void {
 
     if (self.entity == &engine.player) {
         utils.print("You died!", .{});
+        engine.event_handler = .gameover;
     } else {
         utils.print("{s} is dead!", .{self.entity.name});
     }
