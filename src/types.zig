@@ -29,6 +29,8 @@ test "Vec euclidean distance" {
     try testing.expectEqual(vec(5, 5).euclideanDistance(vec(0, 0)), 7);
 }
 
+const RenderOrder = enum { corpse, item, actor };
+
 pub const Entity = struct {
     const Self = @This();
 
@@ -38,6 +40,7 @@ pub const Entity = struct {
     color: ?i32,
     name: []const u8,
     blocks_movement: bool = false,
+    render_order: RenderOrder = .corpse,
     fighter: ?Fighter = null,
     ai: ?AI = null,
 
@@ -63,7 +66,34 @@ pub const Entity = struct {
         self.x += dx;
         self.y += dy;
     }
+
+    pub fn tester() Entity {
+        return .{
+            .char = 'T',
+            .color = 0xFF0000,
+            .blocks_movement = false,
+            .name = "Tester",
+        };
+    }
+
+    pub fn compareByRenderOrder(_: void, a: *Entity, b: *Entity) bool {
+        return @enumToInt(a.render_order) < @enumToInt(b.render_order);
+    }
 };
+
+test "Entity.compareByRenderOrder" {
+    var a = Entity.tester();
+    a.render_order = .corpse;
+    var b = Entity.tester();
+    b.render_order = .item;
+    var c = Entity.tester();
+    c.render_order = .actor;
+    var entities = &[_]*Entity{ &c, &a, &b };
+    std.sort.sort(*Entity, entities, {}, Entity.compareByRenderOrder);
+    try testing.expectEqual(entities[0], &a);
+    try testing.expectEqual(entities[1], &b);
+    try testing.expectEqual(entities[2], &c);
+}
 
 pub const Graphic = struct {
     ch: u8,

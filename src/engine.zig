@@ -5,6 +5,7 @@ const input = @import("input.zig");
 const term = @import("term.zig");
 const gamemap = @import("map.zig");
 const actions = @import("actions.zig");
+const testing = std.testing;
 const Allocator = std.mem.Allocator;
 const Vec = types.Vec;
 const Console = term.Console;
@@ -40,6 +41,10 @@ pub fn handleEnemyTurns() void {
         if (entity == &player) continue;
         if (entity.ai) |*ai| ai.perform();
     }
+}
+
+pub fn updateRenderOrder() void {
+    std.sort.sort(*Entity, map.entities.items, {}, Entity.compareByRenderOrder);
 }
 
 /// Recompute the visible area based on the player's point of view.

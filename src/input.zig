@@ -63,6 +63,7 @@ pub const EventHandler = struct {
         if (maybe_action) |action| {
             actions.perform(action, &engine.player);
             engine.handleEnemyTurns();
+            engine.updateRenderOrder();
             engine.updateFieldOfView();
         }
     }

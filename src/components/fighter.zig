@@ -37,6 +37,7 @@ pub fn die(self: *Self) void {
     self.entity.color = rgb(191, 0, 0);
     self.entity.blocks_movement = false;
     self.entity.ai = null;
+    self.entity.render_order = .corpse;
 
     if (self.entity == &engine.player) {
         utils.print("You died!", .{});
