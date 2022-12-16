@@ -1,6 +1,8 @@
 const std = @import("std");
 const engine = @import("engine.zig");
 const registry = @import("registry.zig");
+const Fighter = @import("components/fighter.zig");
+const AI = @import("components/ai.zig");
 const testing = std.testing;
 
 pub const Vec = struct {
@@ -36,11 +38,19 @@ pub const Entity = struct {
     color: ?i32,
     name: []const u8,
     blocks_movement: bool = false,
+    fighter: ?Fighter = null,
+    ai: ?AI = null,
 
     /// Called internally when the entity is added to the engine. Use `spawn`
     /// instead of init'ing entities yourself.
     pub fn init(self: *Self) void {
-        _ = self;
+        if (self.fighter) |*fighter| fighter.init(self);
+        if (self.ai) |*ai| ai.init(self);
+    }
+
+    pub fn deinit(self: *Self) void {
+        if (self.fighter) |*fighter| fighter.deinit(self);
+        if (self.ai) |*ai| ai.deinit(self);
     }
 
     /// Adds a copy of this entity into the engine and returns a pointer to it.

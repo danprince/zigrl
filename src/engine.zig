@@ -37,8 +37,8 @@ pub fn init(params: EngineParams) !void {
 
 pub fn handleEnemyTurns() void {
     for (map.entities.items) |entity| {
-        //if (entity == &player) continue;
-        utils.print("The {s} wonders when it will get to take a real turn.", .{entity.name});
+        if (entity == &player) continue;
+        if (entity.ai) |*ai| ai.perform();
     }
 }
 

@@ -4,16 +4,22 @@ const utils = @import("utils.zig");
 const Entity = types.Entity;
 
 pub const ActionType = enum {
+    wait,
     move,
     melee,
     bump,
 };
 
 pub const Action = union(ActionType) {
+    wait: void,
     move: struct { dx: isize, dy: isize },
     melee: struct { dx: isize, dy: isize },
     bump: struct { dx: isize, dy: isize },
 };
+
+pub fn wait() Action {
+    return .{ .wait = {} };
+}
 
 pub fn move(dx: isize, dy: isize) Action {
     return .{ .move = .{ .dx = dx, .dy = dy } };
@@ -29,6 +35,7 @@ pub fn bump(dx: isize, dy: isize) Action {
 
 pub fn perform(action: Action, entity: *Entity) void {
     switch (action) {
+        .wait => {},
         .move => |movement| {
             const dest_x = entity.x + movement.dx;
             const dest_y = entity.y + movement.dy;
@@ -54,7 +61,17 @@ pub fn perform(action: Action, entity: *Entity) void {
             const dest_y = entity.y + movement.dy;
             const target_or_null = engine.map.getBlockingEntityAt(dest_x, dest_y);
             if (target_or_null) |target| {
-                utils.print("You kick the {s}, much to it's annoyance", .{target.name});
+                if (entity.fighter) |*entity_fighter| {
+                    if (target.fighter) |*target_fighter| {
+                        const max_damage = entity_fighter.power - target_fighter.defense;
+                        const damage = target_fighter.damage(max_damage);
+                        if (damage > 0) {
+                            utils.print("{s} attacks {s} for {d} hit points.", .{ entity.name, target.name, damage });
+                        } else {
+                            utils.print("{s} attacks {s} but does no damage.", .{ entity.name, target.name });
+                        }
+                    }
+                }
             }
         },
         .bump => |movement| {
