@@ -6,6 +6,7 @@ const term = @import("term.zig");
 const gamemap = @import("map.zig");
 const widgets = @import("widgets.zig");
 const actions = @import("actions.zig");
+const messages = @import("messages.zig");
 const testing = std.testing;
 const Allocator = std.mem.Allocator;
 const Vec = types.Vec;
@@ -14,11 +15,13 @@ const Entity = types.Entity;
 const InputEvent = input.InputEvent;
 const EventHandler = input.EventHandler;
 const Map = gamemap.Map;
+const MessageLog = messages.MessageLog;
 
 pub var allocator: Allocator = undefined;
 pub var event_handler: EventHandler = undefined;
 pub var player: Entity = undefined;
 pub var map: gamemap.Map = undefined;
+pub var message_log: MessageLog = undefined;
 
 const EngineParams = struct {
     event_handler: EventHandler,
@@ -31,6 +34,7 @@ pub fn init(params: EngineParams) !void {
     allocator = params.allocator;
     player = params.player;
     event_handler = params.event_handler;
+    message_log = MessageLog.init(params.allocator);
     map = params.map;
     player = params.player;
     player.init();
@@ -81,6 +85,8 @@ pub fn updateFieldOfView() void {
 
 pub fn render(console: *Console) void {
     map.render(console);
+
+    message_log.render(&console.child(21, 45, 40, 5));
 
     if (player.fighter) |fighter| {
         widgets.renderBar(

@@ -11,6 +11,7 @@ const gamemap = @import("map.zig");
 const entities = @import("entities.zig");
 const procgen = @import("procgen.zig");
 const registry = @import("registry.zig");
+const colors = @import("colors.zig");
 const testing = std.testing;
 const Terminal = term.Terminal;
 const Map = gamemap.Map;
@@ -26,7 +27,7 @@ fn init(seed: u64) !void {
     var map = try procgen.generateDungeon(.{
         .seed = seed,
         .map_width = 80,
-        .map_height = 45,
+        .map_height = 43,
         .room_max_size = 10,
         .room_min_size = 6,
         .max_monsters_per_room = 2,
@@ -43,6 +44,11 @@ fn init(seed: u64) !void {
     });
 
     engine.updateFieldOfView();
+
+    engine.message_log.add(
+        "Hello and welcome, adventurer, to yet another dungeon!",
+        colors.welcome_text,
+    );
 
     terminal = try Terminal.init(80, 50, gpa.allocator());
     host.initTerm(terminal.width, terminal.height);
