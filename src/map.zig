@@ -58,7 +58,6 @@ pub const Map = struct {
     /// Adds an entity to the map.
     pub fn addEntity(self: *Self, entity: *Entity) !void {
         try self.entities.append(entity);
-        utils.print("add entity {*} to {*} ({d})", .{ self, entity, self.entities.items.len });
     }
 
     /// Adds an entity to the map at specific coordinates.
