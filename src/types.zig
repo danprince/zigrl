@@ -1,5 +1,6 @@
 const std = @import("std");
 const engine = @import("engine.zig");
+const registry = @import("registry.zig");
 const testing = std.testing;
 
 pub const Vec = struct {
@@ -45,8 +46,7 @@ pub const Entity = struct {
     /// Adds a copy of this entity into the engine and returns a pointer to it.
     /// Does not modify the entity that it is called on.
     pub fn spawn(self: Self) *Entity {
-        var entity_ptr = engine.initEntity(self);
-        return entity_ptr;
+        return registry.addEntity(self);
     }
 
     pub fn move(self: *Self, dx: isize, dy: isize) void {

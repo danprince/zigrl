@@ -10,6 +10,7 @@ const engine = @import("engine.zig");
 const gamemap = @import("map.zig");
 const entities = @import("entities.zig");
 const procgen = @import("procgen.zig");
+const registry = @import("registry.zig");
 const testing = std.testing;
 const Terminal = term.Terminal;
 const Map = gamemap.Map;
@@ -18,6 +19,8 @@ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var terminal: term.Terminal = undefined;
 
 fn init(seed: u64) !void {
+    try registry.init(gpa.allocator());
+
     var player = entities.player;
 
     var map = try procgen.generateDungeon(.{
@@ -33,16 +36,11 @@ fn init(seed: u64) !void {
     });
 
     try engine.init(.{
-        .map = map,
         .player = player,
-        .allocator = gpa.allocator(),
+        .map = map,
         .event_handler = input.EventHandler{},
+        .allocator = gpa.allocator(),
     });
-
-    var orc = entities.orc.spawn();
-    orc.x = player.x + 2;
-    orc.y = player.y;
-    try engine.map.addEntity(orc);
 
     terminal = try Terminal.init(80, 50, gpa.allocator());
     host.initTerm(terminal.width, terminal.height);
