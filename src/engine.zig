@@ -80,4 +80,8 @@ pub fn updateFieldOfView() void {
 
 pub fn render(console: *Console) void {
     map.render(console);
+
+    if (player.fighter) |fighter| {
+        console.print(1, 47, 0xFFFFFF, null, "HP: {d}/{d}", .{ fighter.hp, fighter.max_hp });
+    }
 }
