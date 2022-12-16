@@ -1,17 +1,30 @@
 const types = @import("types.zig");
 const engine = @import("engine.zig");
+const utils = @import("utils.zig");
 const Entity = types.Entity;
 
 pub const ActionType = enum {
     move,
+    melee,
+    bump,
 };
 
 pub const Action = union(ActionType) {
     move: struct { dx: isize, dy: isize },
+    melee: struct { dx: isize, dy: isize },
+    bump: struct { dx: isize, dy: isize },
 };
 
 pub fn move(dx: isize, dy: isize) Action {
     return .{ .move = .{ .dx = dx, .dy = dy } };
+}
+
+pub fn melee(dx: isize, dy: isize) Action {
+    return .{ .melee = .{ .dx = dx, .dy = dy } };
+}
+
+pub fn bump(dx: isize, dy: isize) Action {
+    return .{ .bump = .{ .dx = dx, .dy = dy } };
 }
 
 pub fn perform(action: Action, entity: *Entity) void {
@@ -30,7 +43,30 @@ pub fn perform(action: Action, entity: *Entity) void {
                 return; // Destination is blocked by a tile.
             }
 
+            if (engine.map.getBlockingEntityAt(dest_x, dest_y) != null) {
+                return; // Destination is blocked by an entity
+            }
+
             entity.move(movement.dx, movement.dy);
+        },
+        .melee => |movement| {
+            const dest_x = entity.x + movement.dx;
+            const dest_y = entity.y + movement.dy;
+            const target_or_null = engine.map.getBlockingEntityAt(dest_x, dest_y);
+            if (target_or_null) |target| {
+                utils.print("You kick the {s}, much to it's annoyance", .{target.name});
+            }
+        },
+        .bump => |movement| {
+            const dest_x = entity.x + movement.dx;
+            const dest_y = entity.y + movement.dy;
+            const target_or_null = engine.map.getBlockingEntityAt(dest_x, dest_y);
+
+            if (target_or_null) |_| {
+                return perform(melee(movement.dx, movement.dy), entity);
+            } else {
+                return perform(move(movement.dx, movement.dy), entity);
+            }
         },
     }
 }
