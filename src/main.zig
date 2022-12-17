@@ -4,7 +4,6 @@ const term = @import("term.zig");
 const rng = @import("rng.zig");
 const host = @import("host.zig");
 const errors = @import("errors.zig");
-const input = @import("input.zig");
 const types = @import("types.zig");
 const tiles = @import("tiles.zig");
 const engine = @import("engine.zig");
@@ -13,6 +12,7 @@ const entities = @import("entities.zig");
 const procgen = @import("procgen.zig");
 const registry = @import("registry.zig");
 const colors = @import("colors.zig");
+const Handler = @import("handler.zig");
 const testing = std.testing;
 const Terminal = term.Terminal;
 const Map = gamemap.Map;
@@ -42,7 +42,7 @@ fn init(seed: u64) !void {
     try engine.init(.{
         .player = player,
         .map = map,
-        .event_handler = .main,
+        .handler = .{ .mode = .main },
         .allocator = gpa.allocator(),
     });
 
@@ -64,20 +64,20 @@ export fn onInit(seed: u32) void {
 export fn onFrame() void {
     terminal.reset();
     var root_console = terminal.root();
-    engine.event_handler.render(&root_console);
+    engine.handler.render(&root_console);
     host.flushTerm(terminal.buffer.ptr, terminal.buffer.len);
 }
 
 export fn onKeyDown(key: u8, modifiers: u8) void {
-    engine.event_handler.handleEvent(.{ .keydown = .{ .key = key, .modifiers = modifiers } });
+    engine.handler.handleEvent(.{ .keydown = .{ .key = key, .modifiers = modifiers } });
 }
 
 export fn onPointerMove(x: isize, y: isize) void {
-    engine.event_handler.handleEvent(.{ .pointermove = .{ .x = x, .y = y } });
+    engine.handler.handleEvent(.{ .pointermove = .{ .x = x, .y = y } });
 }
 
 export fn onPointerDown(x: isize, y: isize) void {
-    engine.event_handler.handleEvent(.{ .pointerdown = .{ .x = x, .y = y } });
+    engine.handler.handleEvent(.{ .pointerdown = .{ .x = x, .y = y } });
 }
 
 /// Freestanding target needs a default log implementation.
