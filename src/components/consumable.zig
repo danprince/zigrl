@@ -144,6 +144,8 @@ pub fn activate(self: *Self, consumer: *Entity, target_pos: ?Vec) ActionResult {
                             colors.status_effect_applied,
                         );
                         ai.pushBehaviour(.{ .confused = .{ .turns_remaining = confusion.number_of_turns } });
+                        self.consume(consumer);
+                        return actions.success();
                     }
                 } else {
                     return actions.failure("You must select an enemy to target.");
