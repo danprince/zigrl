@@ -64,8 +64,7 @@ pub fn perform(action: Action, entity: *Entity) void {
             if (target_or_null) |target| {
                 if (entity.fighter) |*entity_fighter| {
                     if (target.fighter) |*target_fighter| {
-                        const max_damage = entity_fighter.power - target_fighter.defense;
-                        const damage = target_fighter.damage(max_damage);
+                        const damage = entity_fighter.power - target_fighter.defense;
                         const color = if (entity == &engine.player) colors.player_atk else colors.enemy_atk;
 
                         if (damage > 0) {
@@ -73,6 +72,8 @@ pub fn perform(action: Action, entity: *Entity) void {
                         } else {
                             engine.message_log.print("{s} attacks {s} but does no damage.", .{ entity.name, target.name }, color);
                         }
+
+                        _ = target_fighter.damage(damage);
                     }
                 }
             }
