@@ -67,6 +67,13 @@ pub const Map = struct {
         try self.addEntity(entity);
     }
 
+    /// Removes an entity from the map's entity list.
+    pub fn removeEntity(self: *Self, entity: *Entity) void {
+        if (std.mem.indexOfScalar(*Entity, self.entities.items, entity)) |index| {
+            _ = self.entities.swapRemove(index);
+        }
+    }
+
     /// Sets a tile inside the map. Assumes the coords are inside the bounds.
     pub fn setTile(self: *Self, x: isize, y: isize, tile: Tile) void {
         self.tiles[@intCast(usize, x) + @intCast(usize, y) * self.width] = tile;
@@ -249,6 +256,17 @@ test "Map.addEntityAt" {
     try testing.expectEqual(map.entities.items[0], &entity);
     try testing.expectEqual(entity.x, 1);
     try testing.expectEqual(entity.y, 2);
+}
+
+test "Map.removeEntity" {
+    var map = try Map.init(.{ .width = 10, .height = 10, .initial_tile = test_tile, .allocator = testing.allocator });
+    defer map.deinit();
+    var entity = Entity.tester("Tester");
+    try testing.expectEqual(map.entities.items.len, 0);
+    try map.addEntity(&entity);
+    try testing.expectEqual(map.entities.items.len, 1);
+    map.removeEntity(&entity);
+    try testing.expectEqual(map.entities.items.len, 0);
 }
 
 test "Map.getFirstEntityAt" {
