@@ -70,6 +70,7 @@ function initTerm(width, height) {
   canvas.height = fontGlyphHeight * height;
   canvas.style.imageRendering = "pixelated";
   ctx.imageSmoothingEnabled = false;
+  scaleTerminalToFitScreen();
 }
 
 /**
@@ -163,6 +164,7 @@ function tint(color) {
  * dimension.
  */
 function scaleTerminalToFitScreen() {
+  console.log(canvas.width, canvas.height)
   let scaleX = window.innerWidth / canvas.width;
   let scaleY = window.innerHeight / canvas.height;
   let scale = Math.min(scaleX, scaleY, maxCanvasScale);
@@ -260,7 +262,6 @@ addEventListener("keydown", handleKeyDown);
 addEventListener("pointermove", handlePointerMove);
 addEventListener("pointerdown", handlePointerDown);
 
-scaleTerminalToFitScreen();
 startRenderingLoop();
 exports.onInit(seed);
 document.body.append(canvas);
