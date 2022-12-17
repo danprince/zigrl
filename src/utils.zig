@@ -6,13 +6,25 @@ const testing = std.testing;
 
 var fmt_buffer: [1024]u8 = undefined;
 
-/// Equivalent to std.debug.print except it prints the string to the browser's
-/// console instead of to stdout. This function uses a fixed 1KB buffer so that
-/// the caller doesn't have to worry about memory allocations. Larger strings
-/// will be trimmed.
-pub fn print(comptime fmt: []const u8, args: anytype) void {
+const PrintLevel = enum { info, log, warn, err };
+
+/// Print a message to the browser's console using Zig's std.fmt syntax.
+/// Specify a log level explicitly to print as console.info/console.log etc.
+///
+/// This function uses a fixed 1KB buffer so that the caller doesn't have to
+/// worry about memory allocations. Larger strings will be trimmed.
+pub fn printWithLevel(comptime fmt: []const u8, args: anytype, level: PrintLevel) void {
     const str = std.fmt.bufPrint(&fmt_buffer, fmt, args) catch &fmt_buffer;
-    host.print(str.ptr, str.len);
+    host.print(str.ptr, str.len, @enumToInt(level));
+}
+
+/// Equivalent to std.debug.print except it prints the string to the browser's
+/// console instead of to stdout. See `printWithLevel` for more options.
+///
+/// This function uses a fixed 1KB buffer so that the caller doesn't have to
+/// worry about memory allocations. Larger strings will be trimmed.
+pub fn print(comptime fmt: []const u8, args: anytype) void {
+    printWithLevel(fmt, args, .log);
 }
 
 const BresenhamIterator = struct {

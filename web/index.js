@@ -13,6 +13,7 @@ let { instance } = await WebAssembly.instantiateStreaming(
   {
     env: {
       print,
+      printError,
       initTerm,
       flushTerm,
     }
@@ -34,12 +35,27 @@ let exports = instance.exports;
 /**
  * @param {number} pointer
  * @param {number} size
+ * @param {number} level
  */
-function print(pointer, size) {
+function print(pointer, size, level) {
   let buffer = new Uint8Array(exports.memory.buffer, pointer, size);
   let decoder = new TextDecoder();
   let string = decoder.decode(buffer);
-  console.log(string);
+  if (level === 0) console.info(string);
+  if (level === 1) console.log(string);
+  if (level === 2) console.warn(string);
+  if (level === 3) console.error(string);
+}
+
+/**
+ * @param {number} pointer
+ * @param {number} size
+ */
+function printError(pointer, size) {
+  let buffer = new Uint8Array(exports.memory.buffer, pointer, size);
+  let decoder = new TextDecoder();
+  let string = decoder.decode(buffer);
+  console.error(string);
 }
 
 /**

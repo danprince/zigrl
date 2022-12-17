@@ -82,6 +82,12 @@ pub fn log(comptime _: std.log.Level, comptime _: @Type(.EnumLiteral), comptime 
     utils.print(format, args);
 }
 
+/// Default panic handler also prints to the message log for the player.
+pub fn panic(msg: []const u8, trace: ?*std.builtin.StackTrace, ret_addr: ?usize) noreturn {
+    engine.message_log.print("Error: {s}", .{msg}, colors.errors);
+    std.builtin.default_panic(msg, trace, ret_addr);
+}
+
 test {
     _ = @import("colors.zig");
     _ = @import("map.zig");
