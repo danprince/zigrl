@@ -41,6 +41,7 @@ pub const Entity = struct {
     name: []const u8,
     blocks_movement: bool = false,
     render_order: RenderOrder = .corpse,
+    parent: ?*Entity = null,
     fighter: ?Fighter = null,
     ai: ?AI = null,
 
