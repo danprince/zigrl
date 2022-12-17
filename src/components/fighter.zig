@@ -41,7 +41,6 @@ pub fn die(self: *Self) void {
 
     if (self.entity == &engine.player) {
         engine.message_log.add("You died!", colors.player_die);
-        engine.handler.mode = .gameover;
     } else {
         engine.message_log.print("{s} is dead!", .{self.entity.name}, colors.enemy_die);
     }

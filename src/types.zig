@@ -74,6 +74,14 @@ pub const Entity = struct {
         return registry.addEntity(self);
     }
 
+    /// Checks whether this entity is considered to be "alive". Living entities
+    /// either have a fighter component with non-zero HP, or an AI component.
+    pub fn isAlive(self: *Self) bool {
+        if (self.fighter) |fighter| return fighter.hp > 0;
+        if (self.ai != null) return true;
+        return false;
+    }
+
     /// Returns the distance between this entity and the given coordinate.
     pub fn distance(self: *const Self, x: isize, y: isize) isize {
         return @floatToInt(isize, std.math.hypot(f32, @intToFloat(f32, self.x - x), @intToFloat(f32, self.y - y)));

@@ -116,8 +116,13 @@ mode: Mode,
 pub fn handleEvent(self: *Self, event: InputEvent) void {
     if (self.dispatch(event)) |action_or_mode| {
         switch (action_or_mode) {
-            .action => |action| _ = self.handleAction(action),
             .mode => |new_mode| self.mode = new_mode,
+            .action => |action| {
+                _ = self.handleAction(action);
+                if (!engine.player.isAlive()) {
+                    self.mode = .gameover;
+                }
+            },
         }
     }
 }
@@ -189,10 +194,7 @@ fn onKeyDown(self: *Self, key: u8, mod: u8) ?EventResult {
             } else null,
         },
         .drop_item, .use_item => switch (key) {
-            keys.a...keys.z => {
-                self.onSelectItem(key - keys.a);
-                return null;
-            },
+            keys.a...keys.z => self.onSelectItem(key - keys.a),
             else => null,
         },
         .look, .target_point, .target_area => switch (key) {
@@ -238,25 +240,24 @@ fn onExit(self: *Self) ?EventResult {
 }
 
 /// Called when the user selects an item from an item selection mode.
-fn onSelectItem(self: *Self, index: usize) void {
-    var action: ?Action = null;
-
-    if (engine.player.inventory.?.getItemAtIndex(index)) |item| {
-        switch (self.mode) {
-            .drop_item => action = actions.drop(item),
-            .use_item => if (item.consumable) |consumable| {
-                action = consumable.getAction();
-            },
-            else => {},
-        }
-    } else {
+fn onSelectItem(self: *Self, index: usize) ?EventResult {
+    const item_or_null = engine.player.inventory.?.getItemAtIndex(index);
+    if (item_or_null == null) {
         engine.message_log.add("Invalid entry.", colors.invalid);
+        return null;
     }
+    const item = item_or_null.?;
 
-    if (action != null) {
-        if (self.handleAction(action.?)) {
-            engine.handler.mode = .main;
-        }
+    var action: ?Action = switch (self.mode) {
+        .drop_item => actions.drop(item),
+        .use_item => if (item.consumable) |consumable| consumable.getAction() else null,
+        else => null,
+    };
+
+    if (action != null and self.handleAction(action.?)) {
+        return swap(.main);
+    } else {
+        return null;
     }
 }
 
