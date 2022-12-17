@@ -3,6 +3,9 @@ const engine = @import("engine.zig");
 const registry = @import("registry.zig");
 const Fighter = @import("components/fighter.zig");
 const AI = @import("components/ai.zig");
+const Consumable = @import("components/consumable.zig");
+const Inventory = @import("components/inventory.zig");
+const Allocator = std.mem.Allocator;
 const testing = std.testing;
 
 pub const Vec = struct {
@@ -44,17 +47,25 @@ pub const Entity = struct {
     parent: ?*Entity = null,
     fighter: ?Fighter = null,
     ai: ?AI = null,
+    consumable: ?Consumable = null,
+    inventory: ?Inventory = null,
+    allocator: Allocator = undefined,
 
     /// Called internally when the entity is added to the engine. Use `spawn`
     /// instead of init'ing entities yourself.
-    pub fn init(self: *Self) void {
+    pub fn init(self: *Self, allocator: Allocator) void {
+        self.allocator = allocator;
         if (self.fighter) |*fighter| fighter.init(self);
         if (self.ai) |*ai| ai.init(self);
+        if (self.consumable) |*consumable| consumable.init(self);
+        if (self.inventory) |*inventory| inventory.init(self, allocator);
     }
 
     pub fn deinit(self: *Self) void {
         if (self.fighter) |*fighter| fighter.deinit(self);
         if (self.ai) |*ai| ai.deinit(self);
+        if (self.consumable) |*consumable| consumable.deinit(self);
+        if (self.inventory) |*inventory| inventory.deinit(self);
     }
 
     /// Adds a copy of this entity into the engine and returns a pointer to it.

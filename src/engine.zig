@@ -38,7 +38,7 @@ pub fn init(params: EngineParams) !void {
     message_log = MessageLog.init(params.allocator);
     map = params.map;
     player = params.player;
-    player.init();
+    player.init(params.allocator);
     try map.addEntity(&player);
 }
 

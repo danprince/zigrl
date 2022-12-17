@@ -31,6 +31,7 @@ fn init(seed: u64) !void {
         .room_max_size = 10,
         .room_min_size = 6,
         .max_monsters_per_room = 2,
+        .max_items_per_room = 2,
         .max_rooms = 30,
         .player = &player,
         .allocator = gpa.allocator(),

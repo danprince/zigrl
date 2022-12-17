@@ -27,7 +27,7 @@ pub fn addEntity(entity: Entity) *Entity {
     entities[entity_index] = entity;
     var entity_ptr = &entities[entity_index];
     entity_index += 1;
-    entity_ptr.init();
+    entity_ptr.init(allocator);
 
     return entity_ptr;
 }

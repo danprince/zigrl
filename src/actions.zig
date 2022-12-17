@@ -9,6 +9,9 @@ pub const ActionType = enum {
     move,
     melee,
     bump,
+    use,
+    pickup,
+    drop,
 };
 
 pub const Action = union(ActionType) {
@@ -16,6 +19,9 @@ pub const Action = union(ActionType) {
     move: struct { dx: isize, dy: isize },
     melee: struct { dx: isize, dy: isize },
     bump: struct { dx: isize, dy: isize },
+    use: *Entity,
+    pickup: void,
+    drop: *Entity,
 };
 
 pub const ActionResultType = enum {
@@ -28,11 +34,11 @@ pub const ActionResult = union(ActionResultType) {
     failure: []const u8,
 };
 
-fn success() ActionResult {
+pub fn success() ActionResult {
     return .{ .success = {} };
 }
 
-fn failure(message: []const u8) ActionResult {
+pub fn failure(message: []const u8) ActionResult {
     return .{ .failure = message };
 }
 
@@ -52,8 +58,20 @@ pub fn bump(dx: isize, dy: isize) Action {
     return .{ .bump = .{ .dx = dx, .dy = dy } };
 }
 
-pub fn perform(action: Action, entity: *Entity) ActionResult {
-    return switch (action) {
+pub fn use(item: *Entity) Action {
+    return .{ .use = item };
+}
+
+pub fn pickup() Action {
+    return .{ .pickup = {} };
+}
+
+pub fn drop(item: *Entity) Action {
+    return .{ .drop = item };
+}
+
+pub fn perform(any_action: Action, entity: *Entity) ActionResult {
+    return switch (any_action) {
         .wait => success(),
         .move => |movement| {
             const dest_x = entity.x + movement.dx;
@@ -99,7 +117,7 @@ pub fn perform(action: Action, entity: *Entity) ActionResult {
                 }
             }
 
-            return failure("You can't fight that.");
+            return failure("Nothing to attack.");
         },
         .bump => |movement| {
             const dest_x = entity.x + movement.dx;
@@ -111,6 +129,38 @@ pub fn perform(action: Action, entity: *Entity) ActionResult {
             } else {
                 return perform(move(movement.dx, movement.dy), entity);
             }
+        },
+        .use => |item| {
+            if (item.consumable) |*consumable| {
+                return consumable.activate(entity);
+            } else {
+                return failure("You can't use this");
+            }
+        },
+        .pickup => {
+            while (entity.inventory) |*inventory| {
+                while (!inventory.isFull()) {
+                    var item_or_null = engine.map.getItemAt(entity.x, entity.y);
+                    if (item_or_null) |item| {
+                        inventory.add(item);
+                        engine.map.removeEntity(item);
+                        engine.message_log.print("You picked up the {s}.", .{item.name}, colors.white);
+                        return success();
+                    } else {
+                        return failure("There is nothing here to pickup");
+                    }
+                } else {
+                    return failure("Your inventory is full.");
+                }
+            } else {
+                return failure("You don't have anywhere to put that!");
+            }
+        },
+        .drop => |item| {
+            if (entity.inventory) |*inventory| {
+                inventory.drop(item);
+                return success();
+            } else return failure("You aren't holding that!");
         },
     };
 }

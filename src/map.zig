@@ -116,6 +116,17 @@ pub const Map = struct {
         return null;
     }
 
+    /// Returns the first item at these coordinates, or null if there are
+    /// no items here.
+    pub fn getItemAt(self: *Self, x: isize, y: isize) ?*Entity {
+        for (self.entities.items) |entity| {
+            if (entity.x == x and entity.y == y and entity.consumable != null) {
+                return entity;
+            }
+        }
+        return null;
+    }
+
     /// Returns an iterator which yields each of the entities at this position.
     /// The iterator will be invalidated if the map's entity list is modified
     /// during iteration.
@@ -306,4 +317,15 @@ test "Map.getEntitiesAt" {
     try testing.expectEqual(iter.next(), &b);
     try testing.expectEqual(iter.next(), &c);
     try testing.expectEqual(iter.next(), null);
+}
+
+test "Map.getItemAt" {
+    var map = try Map.init(.{ .width = 10, .height = 10, .initial_tile = test_tile, .allocator = testing.allocator });
+    defer map.deinit();
+    var potion = Entity.tester("Potion");
+    potion.consumable = .{ .kind = .{ .healing = .{ .amount = 0 } } };
+    var player = Entity.tester("Player");
+    try map.addEntityAt(1, 2, &player);
+    try map.addEntityAt(1, 2, &potion);
+    try testing.expectEqual(map.getItemAt(1, 2), &potion);
 }

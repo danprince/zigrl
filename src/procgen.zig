@@ -59,6 +59,7 @@ const DungeonParams = struct {
     room_min_size: isize,
     room_max_size: isize,
     max_monsters_per_room: usize,
+    max_items_per_room: usize,
     player: *Entity,
     allocator: Allocator,
 };
@@ -107,7 +108,7 @@ pub fn generateDungeon(params: DungeonParams) !Map {
         digRect(&dungeon, x, y, room_width, room_height);
 
         // Spawn entities in this room
-        try placeEntities(&dungeon, &rng, room, params.max_monsters_per_room);
+        try placeEntities(&dungeon, &rng, room, params.max_monsters_per_room, params.max_items_per_room);
 
         try rooms.append(room);
     }
@@ -140,8 +141,15 @@ fn digRect(dungeon: *Map, x: isize, y: isize, w: isize, h: isize) void {
     }
 }
 
-fn placeEntities(dungeon: *Map, rng: *std.rand.Random, room: RectangularRoom, maximum_monsters: usize) !void {
+fn placeEntities(
+    dungeon: *Map,
+    rng: *std.rand.Random,
+    room: RectangularRoom,
+    maximum_monsters: usize,
+    maximum_items: usize,
+) !void {
     const number_of_monsters = rng.intRangeAtMost(usize, 0, maximum_monsters);
+    const number_of_items = rng.intRangeAtMost(usize, 0, maximum_items);
 
     var i: usize = 0;
     while (i < number_of_monsters) : (i += 1) {
@@ -154,5 +162,14 @@ fn placeEntities(dungeon: *Map, rng: *std.rand.Random, room: RectangularRoom, ma
         } else {
             try dungeon.addEntityAt(x, y, entities.troll.spawn());
         }
+    }
+
+    var j: usize = 0;
+    while (j < number_of_items) : (j += 1) {
+        const x = rng.intRangeAtMost(isize, room.x1 + 1, room.x2 - 1);
+        const y = rng.intRangeAtMost(isize, room.y1 + 1, room.y2 - 1);
+        if (dungeon.getFirstEntityAt(x, y) != null) continue;
+
+        try dungeon.addEntityAt(x, y, entities.health_potion.spawn());
     }
 }

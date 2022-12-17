@@ -52,3 +52,7 @@ pub fn damage(self: *Self, amount: isize) isize {
     self.setHP(self.hp - amount);
     return std.math.absInt(self.hp - hp_before) catch 0;
 }
+
+pub fn heal(self: *Self, amount: isize) isize {
+    return self.damage(-amount);
+}
