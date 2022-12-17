@@ -48,7 +48,7 @@ pub const MessageLog = struct {
     pub fn render(self: *Self, console: *const Console) void {
         const messages = self.messages.items;
         const max_width = @intCast(usize, console.width) - 1;
-        var y_offset = console.height - 1;
+        var y_offset = console.height;
 
         // Iterate through messages in reverse to show the most recent message
         // first (at the bottom).
