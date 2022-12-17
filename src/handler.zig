@@ -83,11 +83,62 @@ pub const Mode = union(ModeType) {
     target_area: struct { item: *Entity, radius: isize },
 };
 
+const EventResultType = enum { action, mode };
+
+/// An event result is the possible outcome of any given input event.
+/// It can either be an action to process for the player, or a mode to switch
+/// into for the current handler.
+const EventResult = union(EventResultType) {
+    action: Action,
+    mode: Mode,
+};
+
+/// Helper for creating action event results.
+fn act(action: Action) EventResult {
+    return .{ .action = action };
+}
+
+/// Helper for creating mode change event results.
+fn swap(mode: Mode) EventResult {
+    return .{ .mode = mode };
+}
+
 const Self = @This();
 
 mode: Mode,
 
-fn dispatch(self: *Self, event: InputEvent) ?Action {
+/// Triggers a game action, if possible, given an input event.
+pub fn handleEvent(self: *Self, event: InputEvent) void {
+    if (self.dispatch(event)) |action_or_mode| {
+        switch (action_or_mode) {
+            .action => |action| _ = self.handleAction(action),
+            .mode => |new_mode| self.mode = new_mode,
+        }
+    }
+}
+
+/// Process an action for the player. Returns true if the action was successful
+/// and false if it failed.
+fn handleAction(_: *Self, action: Action) bool {
+    const result = actions.perform(action, &engine.player);
+
+    switch (result) {
+        .failure => |msg| {
+            engine.message_log.print("{s}", .{msg}, colors.impossible);
+            return false;
+        },
+        .success => {
+            engine.handleEnemyTurns();
+            engine.updateRenderOrder();
+            engine.updateFieldOfView();
+            return true;
+        },
+    }
+}
+
+/// Takes an input event and turns it into an EventResult using the appropriate
+/// event callbacks.
+fn dispatch(self: *Self, event: InputEvent) ?EventResult {
     return switch (event) {
         .keydown => |key_event| self.onKeyDown(key_event.key, key_event.modifiers),
         .pointermove => |pos| self.onMouseMove(pos.x, pos.y),
@@ -95,71 +146,83 @@ fn dispatch(self: *Self, event: InputEvent) ?Action {
     };
 }
 
-fn onMouseDown(self: *Self, x: isize, y: isize) ?Action {
-    switch (self.mode) {
-        .look, .target_point, .target_area => self.onSelectIndex(x, y),
-        else => {},
-    }
+/// Called whenever the mouse is moved.
+fn onMouseMove(_: *Self, x: isize, y: isize) ?EventResult {
+    engine.mouse_location.x = x;
+    engine.mouse_location.y = y;
     return null;
 }
 
-fn onKeyDown(self: *Self, key: u8, mod: u8) ?Action {
-    switch (key) {
-        // Ignore modifier keypresses
-        keys.shift, keys.alt, keys.ctrl => return null,
-        keys.esc => {
-            self.onExit();
-            return null;
-        },
-        else => {},
-    }
-
-    var action: ?Action = null;
-
-    switch (self.mode) {
-        .main => switch (key) {
-            keys.space, keys.period => action = actions.wait(),
-            keys.g => action = actions.pickup(),
-            keys.i => engine.handler.mode = .use_item,
-            keys.d => engine.handler.mode = .drop_item,
-            keys.slash => engine.handler.mode = .look,
-            else => if (getMoveKey(key)) |move| {
-                action = actions.bump(move[0], move[1]);
-            },
-        },
-        .drop_item, .use_item => switch (key) {
-            keys.a...keys.z => self.onSelectItem(key - keys.a),
-            else => {},
-        },
-        .look, .target_point, .target_area => {
-            switch (key) {
-                keys.enter => self.onSelectIndex(engine.mouse_location.x, engine.mouse_location.y),
-                keys.shift => {},
-                else => {
-                    var speed: isize = 1;
-                    if (mod & modifiers.shift > 0) speed *= 5;
-
-                    if (getMoveKey(key)) |move| {
-                        var x = engine.mouse_location.x;
-                        var y = engine.mouse_location.y;
-                        x += move[0] * speed;
-                        y += move[1] * speed;
-                        x = std.math.clamp(x, 0, engine.map.width - 1);
-                        y = std.math.clamp(y, 0, engine.map.height - 1);
-                        engine.mouse_location.x = x;
-                        engine.mouse_location.y = y;
-                    } else {
-                        self.onExit();
-                    }
-                },
-            }
-        },
-        else => {},
-    }
-
-    return action;
+/// Called whenever the mouse goes down.
+fn onMouseDown(self: *Self, x: isize, y: isize) ?EventResult {
+    return switch (self.mode) {
+        .look, .target_point, .target_area => self.onSelectIndex(x, y),
+        else => null,
+    };
 }
 
+/// Called whenever a key is pressed.
+fn onKeyDown(self: *Self, key: u8, mod: u8) ?EventResult {
+    switch (key) {
+        // Ignore modifier keypresses in all modes.
+        keys.shift, keys.alt, keys.ctrl => return null,
+        // Esc is always considered as an attempt to exit.
+        keys.esc => return self.onExit(),
+        else => {},
+    }
+
+    return switch (self.mode) {
+        .main => switch (key) {
+            keys.space, keys.period => act(actions.wait()),
+            keys.g => act(actions.pickup()),
+            keys.i => swap(.use_item),
+            keys.d => swap(.drop_item),
+            keys.slash => swap(.look),
+            else => if (getMoveKey(key)) |move| {
+                return act(actions.bump(move[0], move[1]));
+            } else null,
+        },
+        .drop_item, .use_item => switch (key) {
+            keys.a...keys.z => {
+                self.onSelectItem(key - keys.a);
+                return null;
+            },
+            else => null,
+        },
+        .look, .target_point, .target_area => switch (key) {
+            keys.enter => self.onSelectIndex(engine.mouse_location.x, engine.mouse_location.y),
+            else => {
+                var speed: isize = 1;
+                if (mod & modifiers.shift > 0) speed *= 5;
+
+                if (getMoveKey(key)) |move| {
+                    var x = engine.mouse_location.x;
+                    var y = engine.mouse_location.y;
+                    x += move[0] * speed;
+                    y += move[1] * speed;
+                    x = std.math.clamp(x, 0, engine.map.width - 1);
+                    y = std.math.clamp(y, 0, engine.map.height - 1);
+                    engine.mouse_location.x = x;
+                    engine.mouse_location.y = y;
+                    return null;
+                }
+
+                return self.onExit();
+            },
+        },
+        else => null,
+    };
+}
+
+/// Called when the user attempts to exit the current handler mode.
+fn onExit(self: *Self) ?EventResult {
+    return switch (self.mode) {
+        .main, .gameover => null,
+        else => swap(.main),
+    };
+}
+
+/// Called when the user selects an item from an item selection mode.
 fn onSelectItem(self: *Self, index: usize) void {
     var action: ?Action = null;
 
@@ -182,61 +245,21 @@ fn onSelectItem(self: *Self, index: usize) void {
     }
 }
 
-/// Called when the user attempts to exit the current handler mode.
-fn onExit(self: *Self) void {
-    switch (self.mode) {
-        .main => {},
-        .gameover => {},
-        else => engine.handler.mode = .main,
-    }
-}
-
 /// Called when the the user selects an index as part of a targeting mode.
-fn onSelectIndex(self: *Self, x: isize, y: isize) void {
-    switch (self.mode) {
+fn onSelectIndex(self: *Self, x: isize, y: isize) ?EventResult {
+    return switch (self.mode) {
         .target_point => |target| {
-            _ = actions.perform(actions.useAtTarget(target.item, x, y), &engine.player);
+            var action = actions.useAtTarget(target.item, x, y);
+            var result = self.handleAction(action);
+            return if (result) self.onExit() else null;
         },
         .target_area => |target| {
-            _ = actions.perform(actions.useAtTarget(target.item, x, y), &engine.player);
+            var action = actions.useAtTarget(target.item, x, y);
+            var result = self.handleAction(action);
+            return if (result) self.onExit() else null;
         },
-        else => {},
-    }
-
-    self.onExit();
-}
-
-/// Called whenever the mouse is moved.
-fn onMouseMove(_: *Self, x: isize, y: isize) ?Action {
-    engine.mouse_location.x = x;
-    engine.mouse_location.y = y;
-    return null;
-}
-
-/// Triggers a game action, if possible, given an input event.
-pub fn handleEvent(self: *Self, event: InputEvent) void {
-    if (self.dispatch(event)) |action| {
-        _ = self.handleAction(action);
-    }
-}
-
-/// Process an action for the player. Returns true if the action was successful
-/// and false if it failed.
-fn handleAction(_: *Self, action: Action) bool {
-    const result = actions.perform(action, &engine.player);
-
-    switch (result) {
-        .failure => |msg| {
-            engine.message_log.print("{s}", .{msg}, colors.impossible);
-            return false;
-        },
-        .success => {
-            engine.handleEnemyTurns();
-            engine.updateRenderOrder();
-            engine.updateFieldOfView();
-            return true;
-        },
-    }
+        else => self.onExit(),
+    };
 }
 
 /// Render the current handler's mode.
