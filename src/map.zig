@@ -358,6 +358,7 @@ const WorldParams = struct {
 
 pub const World = struct {
     const Self = @This();
+    seed: u64 = 0,
     params: WorldParams,
     current_floor: usize = 0,
     allocator: Allocator,
@@ -365,15 +366,17 @@ pub const World = struct {
     pub fn init(params: WorldParams) World {
         return .{
             .params = params,
+            .seed = params.seed,
             .allocator = params.allocator,
         };
     }
 
     pub fn generateFloor(self: *Self) Map {
         self.current_floor += 1;
+        self.seed += 1;
 
         return procgen.generateDungeon(.{
-            .seed = self.params.seed,
+            .seed = self.seed,
             .map_width = self.params.map_width,
             .map_height = self.params.map_height,
             .room_max_size = self.params.room_max_size,
