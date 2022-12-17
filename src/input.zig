@@ -81,21 +81,23 @@ pub const EventHandler = union(Mode) {
     }
 
     pub fn handleEvent(self: Self, event: InputEvent) void {
-        var maybe_action = self.dispatch(event);
+        if (self.dispatch(event)) |action| {
+            self.handleAction(action);
+        }
+    }
 
-        if (maybe_action) |action| {
-            const result = actions.perform(action, &engine.player);
+    fn handleAction(_: Self, action: Action) void {
+        const result = actions.perform(action, &engine.player);
 
-            switch (result) {
-                .failure => |msg| {
-                    engine.message_log.print("{s}", .{msg}, colors.impossible);
-                },
-                else => {
-                    engine.handleEnemyTurns();
-                    engine.updateRenderOrder();
-                    engine.updateFieldOfView();
-                },
-            }
+        switch (result) {
+            .failure => |msg| {
+                engine.message_log.print("{s}", .{msg}, colors.impossible);
+            },
+            .success => {
+                engine.handleEnemyTurns();
+                engine.updateRenderOrder();
+                engine.updateFieldOfView();
+            },
         }
     }
 
