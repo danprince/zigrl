@@ -11,10 +11,14 @@ const testing = std.testing;
 const Entity = types.Entity;
 const Self = @This();
 
-const ConsumableKindType = enum { healing };
+const ConsumableKindType = enum {
+    healing,
+    lightning_damage,
+};
 
 const ConsumableKind = union(ConsumableKindType) {
     healing: struct { amount: isize },
+    lightning_damage: struct { damage: isize, maximum_range: isize },
 };
 
 entity: *Entity = undefined,
@@ -40,6 +44,33 @@ pub fn activate(self: *Self, consumer: *Entity) ActionResult {
                 }
             }
             return actions.failure("Your health is already full.");
+        },
+        .lightning_damage => |lightning| {
+            var target: ?*Entity = null;
+            var closest_distance = lightning.maximum_range + 1;
+
+            for (engine.map.entities.items) |entity| {
+                if (entity == consumer) continue;
+                if (entity.fighter == null) continue;
+                const distance = consumer.distance(entity.x, entity.y);
+                if (distance < closest_distance) {
+                    target = entity;
+                    closest_distance = distance;
+                }
+            }
+
+            if (target) |target_entity| {
+                engine.message_log.print(
+                    "A lightning bolt strikes the {s} with a loud thunder for {d} damage",
+                    .{ target_entity.name, lightning.damage },
+                    colors.white,
+                );
+                _ = target_entity.fighter.?.damage(lightning.damage);
+                self.consume(consumer);
+                return actions.success();
+            } else {
+                return actions.failure("No enemy is close enough to strike.");
+            }
         },
     }
 }

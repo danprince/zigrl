@@ -74,6 +74,11 @@ pub const Entity = struct {
         return registry.addEntity(self);
     }
 
+    /// Returns the distance between this entity and the given coordinate.
+    pub fn distance(self: *const Self, x: isize, y: isize) isize {
+        return @floatToInt(isize, std.math.hypot(f32, @intToFloat(f32, self.x - x), @intToFloat(f32, self.y - y)));
+    }
+
     pub fn move(self: *Self, dx: isize, dy: isize) void {
         self.x += dx;
         self.y += dy;

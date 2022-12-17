@@ -170,6 +170,10 @@ fn placeEntities(
         const y = rng.intRangeAtMost(isize, room.y1 + 1, room.y2 - 1);
         if (dungeon.getFirstEntityAt(x, y) != null) continue;
 
-        try dungeon.addEntityAt(x, y, entities.health_potion.spawn());
+        if (rng.float(f32) < 0.7) {
+            try dungeon.addEntityAt(x, y, entities.health_potion.spawn());
+        } else {
+            try dungeon.addEntityAt(x, y, entities.lightning_scroll.spawn());
+        }
     }
 }

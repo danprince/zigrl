@@ -43,3 +43,11 @@ pub const health_potion = Entity{
     .render_order = .item,
     .consumable = .{ .kind = .{ .healing = .{ .amount = 4 } } },
 };
+
+pub const lightning_scroll = Entity{
+    .char = '~',
+    .color = rgb(255, 255, 0),
+    .name = "Lightning Scroll",
+    .render_order = .item,
+    .consumable = .{ .kind = .{ .lightning_damage = .{ .damage = 20, .maximum_range = 5 } } },
+};
