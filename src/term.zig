@@ -126,6 +126,16 @@ pub const Console = struct {
         return .{ .terminal = self.terminal, .x = self.x + x, .y = self.y + y, .width = width, .height = height };
     }
 
+    /// Creates a centered subconsole inside this one.
+    pub fn centeredChild(self: *const Console, width: isize, height: isize) Console {
+        return self.child(
+            @divFloor(self.width, 2) - @divFloor(width, 2),
+            @divFloor(self.height, 2) - @divFloor(height, 2),
+            width,
+            height,
+        );
+    }
+
     /// Check whether a given point falls inside this console.
     pub fn isInBounds(self: *const Console, x: isize, y: isize) bool {
         return x >= 0 and y >= 0 and x < self.width and y < self.height;
@@ -326,5 +336,23 @@ test "console boxWithChars" {
         \\ | |  
         \\ | |  
         \\ c-d  
+    , output);
+}
+
+test "Console.centeredChild" {
+    var term = try Terminal.init(6, 6, testing.allocator);
+    defer term.deinit();
+    var child = term.root().centeredChild(3, 3);
+    child.fillRect(0, 0, child.width, child.height, 0, 0, '#');
+
+    const output = try term.toString();
+    defer testing.allocator.free(output);
+    try testing.expectEqualStrings(
+        \\      
+        \\      
+        \\  ### 
+        \\  ### 
+        \\  ### 
+        \\      
     , output);
 }

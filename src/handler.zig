@@ -39,6 +39,7 @@ const keys = struct {
     pub const g = 71; // Pickup
     pub const i = 73; // Use
     pub const d = 68; // Drop
+    pub const v = 86; // History
 
     // Other keys
     pub const enter = 13;
@@ -63,6 +64,8 @@ pub const InputEvent = union(InputEventType) {
     pointerdown: struct { x: isize, y: isize },
 };
 
+const ScrollView = struct { scroll_y: isize = 0 };
+
 pub const ModeType = enum {
     main,
     gameover,
@@ -71,6 +74,7 @@ pub const ModeType = enum {
     look,
     target_point,
     target_area,
+    history,
 };
 
 pub const Mode = union(ModeType) {
@@ -81,6 +85,7 @@ pub const Mode = union(ModeType) {
     look: void,
     target_point: struct { item: *Entity },
     target_area: struct { item: *Entity, radius: isize },
+    history: ScrollView,
 };
 
 const EventResultType = enum { action, mode };
@@ -178,6 +183,7 @@ fn onKeyDown(self: *Self, key: u8, mod: u8) ?EventResult {
             keys.i => swap(.use_item),
             keys.d => swap(.drop_item),
             keys.slash => swap(.look),
+            keys.v => swap(.{ .history = .{} }),
             else => if (getMoveKey(key)) |move| {
                 return act(actions.bump(move[0], move[1]));
             } else null,
@@ -209,6 +215,15 @@ fn onKeyDown(self: *Self, key: u8, mod: u8) ?EventResult {
 
                 return self.onExit();
             },
+        },
+        .history => |*view| {
+            if (getMoveKey(key)) |move| {
+                view.scroll_y += move[1];
+                if (view.scroll_y < 0) view.scroll_y = 0;
+                return null;
+            } else {
+                return self.onExit();
+            }
         },
         else => null,
     };
@@ -268,12 +283,41 @@ pub fn render(self: *Self, console: *Console) void {
         .drop_item => self.renderItemSelection(console, "Drop which item?"),
         .use_item => self.renderItemSelection(console, "Use which item?"),
         .look, .target_point, .target_area => self.renderTargeting(console),
+        .history => |*view| self.renderMessageHistory(console, view),
         else => self.renderGameView(console),
     }
 }
 
 fn renderGameView(_: *Self, console: *Console) void {
     engine.render(console);
+}
+
+fn renderMessageHistory(self: *Self, parent_console: *Console, view: *ScrollView) void {
+    self.renderGameView(parent_console);
+
+    var console = parent_console.centeredChild(60, parent_console.height - 5);
+    var y_offset: isize = 1 - view.scroll_y;
+    var x_offset: isize = 1;
+
+    console.fillRect(0, 0, console.width, console.height, 0, 0, 0);
+
+    for (engine.message_log.messages.items) |message| {
+        var lines = utils.textWrap(message.text, @intCast(usize, console.width - 1));
+        while (lines.next()) |line| {
+            if (y_offset >= 0 and y_offset < console.height) {
+                console.write(x_offset, y_offset, message.fg, null, line);
+            }
+            y_offset += 1;
+        }
+    }
+
+    if (engine.message_log.messages.items.len == 0) {
+        console.write(1, 1, colors.white, null, "(Empty)");
+    }
+
+    console.box(0, 0, console.width, console.height, 0xFFFFFF, null);
+    console.write(1, 0, colors.white, null, "Messages");
+    console.write(console.width - 15, 0, colors.white, null, "(Esc to close)");
 }
 
 fn renderItemSelection(self: *Self, console: *Console, title: []const u8) void {
