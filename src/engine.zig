@@ -7,6 +7,7 @@ const gamemap = @import("map.zig");
 const widgets = @import("widgets.zig");
 const actions = @import("actions.zig");
 const messages = @import("messages.zig");
+const errors = @import("errors.zig");
 const Handler = @import("handler.zig");
 const testing = std.testing;
 const Allocator = std.mem.Allocator;
@@ -17,6 +18,8 @@ const Map = gamemap.Map;
 const World = gamemap.World;
 const MessageLog = messages.MessageLog;
 
+pub var entity_array: []Entity = undefined;
+pub var entity_index: usize = 0;
 pub var allocator: Allocator = undefined;
 pub var handler: Handler = undefined;
 pub var player: Entity = undefined;
@@ -35,9 +38,33 @@ pub fn init(params: EngineParams) !void {
     allocator = params.allocator;
     player = params.player;
     handler = params.handler;
-    message_log = MessageLog.init(params.allocator);
+    message_log = MessageLog.init(allocator);
     player = params.player;
-    player.init(params.allocator);
+    player.init(allocator);
+    entity_array = try allocator.alloc(Entity, 256);
+    entity_index = 0;
+}
+
+pub fn deinit() void {
+    message_log.deinit();
+    player.deinit();
+    map.deinit();
+    world.deinit();
+    allocator.free(entity_array);
+}
+
+pub fn initEntity(entity: Entity) *Entity {
+    while (entity_index >= entity_array.len) {
+        const ok = allocator.resize(entity_array, entity_array.len * 2);
+        if (!ok) errors.crash("Could not init entity!");
+    }
+
+    entity_array[entity_index] = entity;
+    var entity_ptr = &entity_array[entity_index];
+    entity_index += 1;
+    entity_ptr.init(allocator);
+
+    return entity_ptr;
 }
 
 pub fn handleEnemyTurns() void {

@@ -1,6 +1,5 @@
 const std = @import("std");
 const engine = @import("engine.zig");
-const registry = @import("registry.zig");
 const Fighter = @import("components/fighter.zig");
 const Ai = @import("components/ai.zig");
 const Consumable = @import("components/consumable.zig");
@@ -87,7 +86,7 @@ pub const Entity = struct {
     /// Adds a copy of this entity into the engine and returns a pointer to it.
     /// Does not modify the entity that it is called on.
     pub fn spawn(self: Self) *Entity {
-        return registry.addEntity(self);
+        return engine.initEntity(self);
     }
 
     /// Checks whether this entity is considered to be "alive". Living entities
