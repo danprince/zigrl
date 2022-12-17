@@ -2,6 +2,7 @@ const actions = @import("actions.zig");
 const engine = @import("engine.zig");
 const term = @import("term.zig");
 const utils = @import("utils.zig");
+const colors = @import("colors.zig");
 const Action = actions.Action;
 const Console = term.Console;
 
@@ -83,10 +84,18 @@ pub const EventHandler = union(Mode) {
         var maybe_action = self.dispatch(event);
 
         if (maybe_action) |action| {
-            actions.perform(action, &engine.player);
-            engine.handleEnemyTurns();
-            engine.updateRenderOrder();
-            engine.updateFieldOfView();
+            const result = actions.perform(action, &engine.player);
+
+            switch (result) {
+                .failure => |msg| {
+                    engine.message_log.print("{s}", .{msg}, colors.impossible);
+                },
+                else => {
+                    engine.handleEnemyTurns();
+                    engine.updateRenderOrder();
+                    engine.updateFieldOfView();
+                },
+            }
         }
     }
 

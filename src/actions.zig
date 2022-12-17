@@ -18,6 +18,24 @@ pub const Action = union(ActionType) {
     bump: struct { dx: isize, dy: isize },
 };
 
+pub const ActionResultType = enum {
+    success,
+    failure,
+};
+
+pub const ActionResult = union(ActionResultType) {
+    success: void,
+    failure: []const u8,
+};
+
+fn success() ActionResult {
+    return .{ .success = {} };
+}
+
+fn failure(message: []const u8) ActionResult {
+    return .{ .failure = message };
+}
+
 pub fn wait() Action {
     return .{ .wait = {} };
 }
@@ -34,33 +52,35 @@ pub fn bump(dx: isize, dy: isize) Action {
     return .{ .bump = .{ .dx = dx, .dy = dy } };
 }
 
-pub fn perform(action: Action, entity: *Entity) void {
-    switch (action) {
-        .wait => {},
+pub fn perform(action: Action, entity: *Entity) ActionResult {
+    return switch (action) {
+        .wait => success(),
         .move => |movement| {
             const dest_x = entity.x + movement.dx;
             const dest_y = entity.y + movement.dy;
 
             if (!engine.map.inBounds(dest_x, dest_y)) {
-                return; // Destination is out of bounds.
+                return failure("That way is blocked.");
             }
 
             const tile = engine.map.getTile(dest_x, dest_y);
 
             if (!tile.walkable) {
-                return; // Destination is blocked by a tile.
+                return failure("That way is blocked.");
             }
 
             if (engine.map.getBlockingEntityAt(dest_x, dest_y) != null) {
-                return; // Destination is blocked by an entity
+                return failure("That way is blocked.");
             }
 
             entity.move(movement.dx, movement.dy);
+            return success();
         },
         .melee => |movement| {
             const dest_x = entity.x + movement.dx;
             const dest_y = entity.y + movement.dy;
             const target_or_null = engine.map.getBlockingEntityAt(dest_x, dest_y);
+
             if (target_or_null) |target| {
                 if (entity.fighter) |*entity_fighter| {
                     if (target.fighter) |*target_fighter| {
@@ -74,9 +94,12 @@ pub fn perform(action: Action, entity: *Entity) void {
                         }
 
                         _ = target_fighter.damage(damage);
+                        return success();
                     }
                 }
             }
+
+            return failure("You can't fight that.");
         },
         .bump => |movement| {
             const dest_x = entity.x + movement.dx;
@@ -89,5 +112,5 @@ pub fn perform(action: Action, entity: *Entity) void {
                 return perform(move(movement.dx, movement.dy), entity);
             }
         },
-    }
+    };
 }

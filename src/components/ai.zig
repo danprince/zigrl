@@ -37,14 +37,14 @@ pub fn perform(self: *Self) void {
 
             if (engine.map.visible.has(self.entity.x, self.entity.y)) {
                 if (distance <= 1) {
-                    actions.perform(actions.melee(dx, dy), self.entity);
+                    _ = actions.perform(actions.melee(dx, dy), self.entity);
                 } else {
                     // TODO: Use actual pathfinding
-                    actions.perform(actions.move(std.math.sign(dx), std.math.sign(dy)), self.entity);
+                    _ = actions.perform(actions.move(std.math.sign(dx), std.math.sign(dy)), self.entity);
                 }
             }
 
-            return actions.perform(actions.wait(), self.entity);
+            _ = actions.perform(actions.wait(), self.entity);
         },
     }
 }
