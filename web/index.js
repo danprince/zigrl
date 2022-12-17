@@ -1,5 +1,5 @@
 let seed = Date.now();
-let maxCanvasScale = 4;
+let maxCanvasScale = 8;
 let fontGlyphWidth = 6;
 let fontGlyphHeight = 6;
 let fontImage = await loadImage("font.png");
