@@ -174,6 +174,11 @@ fn onMouseMove(_: *Self, x: isize, y: isize) ?EventResult {
 fn onMouseDown(self: *Self, x: isize, y: isize) ?EventResult {
     return switch (self.mode) {
         .look, .target_point, .target_area => self.onSelectIndex(x, y),
+        .main => {
+            const dx = std.math.sign(x - engine.player.x);
+            const dy = std.math.sign(y - engine.player.y);
+            return act(actions.bump(dx, dy));
+        },
         else => null,
     };
 }
