@@ -388,16 +388,16 @@ fn onLevelUpRender(self: *Self, console: *Console) void {
 }
 
 fn onLevelUpKeydown(_: *Self, key: u8) ?EventResult {
-    var level = &engine.player.level.?;
-    const index = key - keys.a;
-    switch (index) {
-        0 => level.increaseMaxHp(20),
-        1 => level.increasePower(1),
-        2 => level.increaseDefense(1),
-        else => {
-            engine.message_log.add("Invalid entry", colors.invalid);
-            return null;
-        },
+    if (engine.player.level) |*level| {
+        switch (key) {
+            keys.a => level.increaseMaxHp(20),
+            keys.b => level.increasePower(1),
+            keys.c => level.increaseDefense(1),
+            else => {
+                engine.message_log.add("Invalid entry", colors.invalid);
+                return null;
+            },
+        }
     }
     return swap(.main);
 }
