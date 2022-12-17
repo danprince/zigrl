@@ -9,4 +9,3 @@ const Vec = types.Vec;
 const Action = actions.Action;
 const Console = term.Console;
 const Entity = types.Entity;
-
