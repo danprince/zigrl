@@ -13,7 +13,7 @@ pub const player = Entity{
     .render_order = .actor,
     .fighter = .{ .hp = 30, .defense = 2, .power = 5 },
     .inventory = .{ .capacity = 26 },
-    .level = .{ .level_up_base = 200, .current_xp = 350 },
+    .level = .{ .level_up_base = 200 },
 };
 
 pub const orc = Entity{
