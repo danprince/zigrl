@@ -40,3 +40,7 @@ pub fn renderNamesAtMouseLocation(console: *Console, x: isize, y: isize) void {
         }
     }
 }
+
+pub fn renderDungeonLevel(console: *Console, dungeon_level: usize, x: isize, y: isize) void {
+    console.print(x, y, colors.white, null, "Dungeon level: {d}", .{dungeon_level});
+}

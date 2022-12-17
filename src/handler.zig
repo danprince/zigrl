@@ -183,7 +183,8 @@ fn onKeyDown(self: *Self, key: u8, mod: u8) ?EventResult {
 
     return switch (self.mode) {
         .main => switch (key) {
-            keys.space, keys.period => act(actions.wait()),
+            keys.period => if (mod & modifiers.shift > 0) act(actions.takeStairs()) else act(actions.wait()),
+            keys.space => act(actions.wait()),
             keys.g => act(actions.pickup()),
             keys.i => swap(.use_item),
             keys.d => swap(.drop_item),

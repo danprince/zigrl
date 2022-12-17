@@ -19,3 +19,10 @@ pub const wall = Tile{
     .dark = .{ .ch = ' ', .fg = rgb(255, 255, 255), .bg = rgb(0, 0, 100) },
     .light = .{ .ch = ' ', .fg = rgb(255, 255, 255), .bg = rgb(130, 110, 50) },
 };
+
+pub const down_stairs = Tile{
+    .walkable = true,
+    .transparent = true,
+    .dark = .{ .ch = '>', .fg = rgb(0, 0, 100), .bg = rgb(50, 50, 150) },
+    .light = .{ .ch = '>', .fg = rgb(255, 255, 255), .bg = rgb(200, 180, 50) },
+};

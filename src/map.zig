@@ -2,9 +2,12 @@ const std = @import("std");
 const types = @import("types.zig");
 const term = @import("term.zig");
 const utils = @import("utils.zig");
+const errors = @import("errors.zig");
 const tile_types = @import("tiles.zig");
+const procgen = @import("procgen.zig");
 const testing = std.testing;
 const shroud = tile_types.shroud;
+const Vec = types.Vec;
 const Allocator = std.mem.Allocator;
 const Entity = types.Entity;
 const Tile = types.Tile;
@@ -29,6 +32,7 @@ pub const Map = struct {
     explored: PointSet,
     allocator: Allocator,
     entities: std.ArrayList(*Entity),
+    downstairs_location: Vec = .{ .x = 0, .y = 0 },
 
     pub fn init(params: MapParams) !Map {
         var tiles = try params.allocator.alloc(Tile, params.width * params.height);
@@ -339,3 +343,45 @@ test "Map.getItemAt" {
     try map.addEntityAt(1, 2, &potion);
     try testing.expectEqual(map.getItemAt(1, 2), &potion);
 }
+
+const WorldParams = struct {
+    seed: u64,
+    map_width: usize,
+    map_height: usize,
+    max_rooms: isize,
+    room_min_size: isize,
+    room_max_size: isize,
+    max_monsters_per_room: usize,
+    max_items_per_room: usize,
+    allocator: Allocator,
+};
+
+pub const World = struct {
+    const Self = @This();
+    params: WorldParams,
+    current_floor: usize = 0,
+    allocator: Allocator,
+
+    pub fn init(params: WorldParams) World {
+        return .{
+            .params = params,
+            .allocator = params.allocator,
+        };
+    }
+
+    pub fn generateFloor(self: *Self) Map {
+        self.current_floor += 1;
+
+        return procgen.generateDungeon(.{
+            .seed = self.params.seed,
+            .map_width = self.params.map_width,
+            .map_height = self.params.map_height,
+            .room_max_size = self.params.room_max_size,
+            .room_min_size = self.params.room_min_size,
+            .max_monsters_per_room = self.params.max_monsters_per_room,
+            .max_items_per_room = self.params.max_items_per_room,
+            .max_rooms = self.params.max_rooms,
+            .allocator = self.allocator,
+        }) catch errors.crash("Could not generate dungeon");
+    }
+};

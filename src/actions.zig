@@ -13,6 +13,7 @@ pub const ActionType = enum {
     use,
     pickup,
     drop,
+    take_stairs,
 };
 
 pub const Action = union(ActionType) {
@@ -23,6 +24,7 @@ pub const Action = union(ActionType) {
     use: struct { item: *Entity, target: ?Vec = null },
     pickup: void,
     drop: *Entity,
+    take_stairs: void,
 };
 
 pub const ActionResultType = enum {
@@ -73,6 +75,10 @@ pub fn pickup() Action {
 
 pub fn drop(item: *Entity) Action {
     return .{ .drop = item };
+}
+
+pub fn takeStairs() Action {
+    return .{ .take_stairs = {} };
 }
 
 pub fn perform(any_action: Action, entity: *Entity) ActionResult {
@@ -166,6 +172,16 @@ pub fn perform(any_action: Action, entity: *Entity) ActionResult {
                 inventory.drop(item);
                 return success();
             } else return failure("You aren't holding that!");
+        },
+        .take_stairs => {
+            if (engine.player.x == engine.map.downstairs_location.x and engine.player.y == engine.map.downstairs_location.y) {
+                engine.map.deinit();
+                engine.map = engine.world.generateFloor();
+                engine.message_log.add("You descend the staircase.", colors.descend);
+                return success();
+            } else {
+                return failure("There are no stairs here.");
+            }
         },
     };
 }

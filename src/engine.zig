@@ -13,18 +13,19 @@ const Vec = types.Vec;
 const Console = term.Console;
 const Entity = types.Entity;
 const Map = gamemap.Map;
+const World = gamemap.World;
 const MessageLog = messages.MessageLog;
 
 pub var allocator: Allocator = undefined;
 pub var handler: Handler = undefined;
 pub var player: Entity = undefined;
-pub var map: gamemap.Map = undefined;
+pub var map: Map = undefined;
+pub var world: World = undefined;
 pub var message_log: MessageLog = undefined;
 pub var mouse_location: Vec = .{ .x = 0, .y = 0 };
 
 const EngineParams = struct {
     handler: Handler,
-    map: Map,
     player: Entity,
     allocator: Allocator,
 };
@@ -34,10 +35,8 @@ pub fn init(params: EngineParams) !void {
     player = params.player;
     handler = params.handler;
     message_log = MessageLog.init(params.allocator);
-    map = params.map;
     player = params.player;
     player.init(params.allocator);
-    try map.addEntity(&player);
 }
 
 pub fn handleEnemyTurns() void {
@@ -96,5 +95,6 @@ pub fn render(console: *Console) void {
         );
     }
 
+    widgets.renderDungeonLevel(console, world.current_floor, 0, 47);
     widgets.renderNamesAtMouseLocation(console, 21, 44);
 }

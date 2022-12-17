@@ -16,6 +16,7 @@ const Handler = @import("handler.zig");
 const testing = std.testing;
 const Terminal = term.Terminal;
 const Map = gamemap.Map;
+const World = gamemap.World;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var terminal: term.Terminal = undefined;
@@ -24,9 +25,13 @@ fn init(seed: u64) !void {
     try registry.init(gpa.allocator());
     rng.init(seed);
 
-    var player = entities.player;
+    try engine.init(.{
+        .player = entities.player,
+        .handler = .{ .mode = .main },
+        .allocator = gpa.allocator(),
+    });
 
-    var map = try procgen.generateDungeon(.{
+    engine.world = World.init(.{
         .seed = seed,
         .map_width = 80,
         .map_height = 43,
@@ -35,17 +40,10 @@ fn init(seed: u64) !void {
         .max_monsters_per_room = 2,
         .max_items_per_room = 2,
         .max_rooms = 30,
-        .player = &player,
         .allocator = gpa.allocator(),
     });
 
-    try engine.init(.{
-        .player = player,
-        .map = map,
-        .handler = .{ .mode = .main },
-        .allocator = gpa.allocator(),
-    });
-
+    engine.map = engine.world.generateFloor();
     engine.updateFieldOfView();
 
     engine.message_log.add(

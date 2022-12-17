@@ -3,6 +3,7 @@ const utils = @import("utils.zig");
 const types = @import("types.zig");
 const tiles = @import("tiles.zig");
 const gamemap = @import("map.zig");
+const engine = @import("engine.zig");
 const entities = @import("entities.zig");
 const testing = std.testing;
 const prng = std.rand.DefaultPrng;
@@ -60,7 +61,6 @@ const DungeonParams = struct {
     room_max_size: isize,
     max_monsters_per_room: usize,
     max_items_per_room: usize,
-    player: *Entity,
     allocator: Allocator,
 };
 
@@ -77,6 +77,8 @@ pub fn generateDungeon(params: DungeonParams) !Map {
 
     var rooms = std.ArrayList(RectangularRoom).init(params.allocator);
     defer rooms.deinit();
+
+    var center_of_last_room = Vec.of(0, 0);
 
     var room_count: usize = 0;
     rooms: while (room_count < params.max_rooms) : (room_count += 1) {
@@ -96,8 +98,7 @@ pub fn generateDungeon(params: DungeonParams) !Map {
 
         if (rooms.items.len == 0) {
             const center = room.center();
-            params.player.x = center.x;
-            params.player.y = center.y;
+            try dungeon.addEntityAt(center.x, center.y, &engine.player);
         } else {
             const p1 = room.center();
             const p2 = rooms.items[rooms.items.len - 1].center();
@@ -107,11 +108,16 @@ pub fn generateDungeon(params: DungeonParams) !Map {
         // Dig out floor for this room
         digRect(&dungeon, x, y, room_width, room_height);
 
+        center_of_last_room = room.center();
+
         // Spawn entities in this room
         try placeEntities(&dungeon, &rng, room, params.max_monsters_per_room, params.max_items_per_room);
 
         try rooms.append(room);
     }
+
+    dungeon.setTile(center_of_last_room.x, center_of_last_room.y, tiles.down_stairs);
+    dungeon.downstairs_location = center_of_last_room;
 
     return dungeon;
 }

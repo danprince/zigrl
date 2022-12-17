@@ -12,6 +12,10 @@ pub const Vec = struct {
     x: isize,
     y: isize,
 
+    pub fn of(comptime x: isize, comptime y: isize) Vec {
+        return .{ .x = x, .y = y };
+    }
+
     pub fn euclideanDistance(from: Vec, to: Vec) isize {
         const dx = @intToFloat(f32, to.x - from.x);
         const dy = @intToFloat(f32, to.y - from.y);
