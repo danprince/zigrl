@@ -11,9 +11,10 @@ pub const player = Entity{
     .name = "Player",
     .blocks_movement = true,
     .render_order = .actor,
-    .fighter = .{ .hp = 30, .defense = 2, .power = 5 },
+    .fighter = .{ .hp = 30, .base_defense = 1, .base_power = 2 },
     .inventory = .{ .capacity = 26 },
     .level = .{ .level_up_base = 200 },
+    .equipment = .{},
 };
 
 pub const orc = Entity{
@@ -22,7 +23,7 @@ pub const orc = Entity{
     .name = "Orc",
     .blocks_movement = true,
     .render_order = .actor,
-    .fighter = .{ .hp = 10, .defense = 0, .power = 3 },
+    .fighter = .{ .hp = 10, .base_defense = 0, .base_power = 3 },
     .ai = Ai.with(.hostile),
     .inventory = .{ .capacity = 0 },
     .level = .{ .xp_given = 35 },
@@ -34,14 +35,14 @@ pub const troll = Entity{
     .name = "Troll",
     .blocks_movement = true,
     .render_order = .actor,
-    .fighter = .{ .hp = 16, .defense = 1, .power = 4 },
+    .fighter = .{ .hp = 16, .base_defense = 1, .base_power = 4 },
     .ai = Ai.with(.hostile),
     .inventory = .{ .capacity = 0 },
     .level = .{ .xp_given = 100 },
 };
 
 pub const health_potion = Entity{
-    .char = '!',
+    .char = 0x17,
     .color = rgb(127, 0, 255),
     .name = "Health Potion",
     .render_order = .item,
@@ -70,4 +71,36 @@ pub const fireball_scroll = Entity{
     .name = "Fireball Scroll",
     .render_order = .item,
     .consumable = .{ .kind = .{ .fireball_damage = .{ .damage = 12, .radius = 3 } } },
+};
+
+pub const dagger = Entity{
+    .char = 0x16,
+    .color = rgb(0, 91, 255),
+    .name = "Dagger",
+    .render_order = .item,
+    .equippable = .{ .kind = .weapon, .power_bonus = 2 },
+};
+
+pub const sword = Entity{
+    .char = 0x16,
+    .color = rgb(0, 91, 255),
+    .name = "Sword",
+    .render_order = .item,
+    .equippable = .{ .kind = .weapon, .power_bonus = 4 },
+};
+
+pub const leather_armor = Entity{
+    .char = 0x15,
+    .color = rgb(139, 69, 19),
+    .name = "Leather Armor",
+    .render_order = .item,
+    .equippable = .{ .kind = .armor, .defense_bonus = 1 },
+};
+
+pub const chainmail = Entity{
+    .char = 0x15,
+    .color = rgb(139, 69, 19),
+    .name = "Chainmail",
+    .render_order = .item,
+    .equippable = .{ .kind = .armor, .defense_bonus = 3 },
 };

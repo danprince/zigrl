@@ -13,6 +13,7 @@ pub const ActionType = enum {
     use,
     pickup,
     drop,
+    equip,
     take_stairs,
 };
 
@@ -24,6 +25,7 @@ pub const Action = union(ActionType) {
     use: struct { item: *Entity, target: ?Vec = null },
     pickup: void,
     drop: *Entity,
+    equip: *Entity,
     take_stairs: void,
 };
 
@@ -77,6 +79,10 @@ pub fn drop(item: *Entity) Action {
     return .{ .drop = item };
 }
 
+pub fn equip(item: *Entity) Action {
+    return .{ .equip = item };
+}
+
 pub fn takeStairs() Action {
     return .{ .take_stairs = {} };
 }
@@ -113,7 +119,7 @@ pub fn perform(any_action: Action, entity: *Entity) ActionResult {
             if (target_or_null) |target| {
                 if (entity.fighter) |*entity_fighter| {
                     if (target.fighter) |*target_fighter| {
-                        const damage = entity_fighter.power - target_fighter.defense;
+                        const damage = entity_fighter.power() - target_fighter.defense();
                         const color = if (entity == &engine.player) colors.player_atk else colors.enemy_atk;
 
                         if (damage > 0) {
@@ -169,9 +175,21 @@ pub fn perform(any_action: Action, entity: *Entity) ActionResult {
         },
         .drop => |item| {
             if (entity.inventory) |*inventory| {
+                if (entity.equipment) |*equipment| {
+                    if (equipment.isItemEquipped(item)) {
+                        equipment.toggleEquip(item);
+                    }
+                }
+
                 inventory.drop(item);
                 return success();
             } else return failure("You aren't holding that!");
+        },
+        .equip => |item| {
+            if (entity.equipment) |*equipment| {
+                equipment.toggleEquip(item);
+                return success();
+            } else return failure("You can't equip that");
         },
         .take_stairs => {
             if (engine.player.x == engine.map.downstairs_location.x and engine.player.y == engine.map.downstairs_location.y) {

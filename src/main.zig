@@ -46,6 +46,18 @@ fn init(seed: u64) !void {
     engine.map = engine.world.generateFloor();
     engine.updateFieldOfView();
 
+    const player_equipment = &engine.player.equipment.?;
+    const player_inventory = &engine.player.inventory.?;
+
+    const dagger = entities.dagger.spawn();
+    player_inventory.add(dagger);
+    player_equipment.toggleEquip(dagger);
+
+    const leather_armor = entities.leather_armor.spawn();
+    player_inventory.add(leather_armor);
+    player_equipment.toggleEquip(leather_armor);
+
+    engine.message_log.active = true;
     engine.message_log.add(
         "Hello and welcome, adventurer, to yet another dungeon!",
         colors.welcome_text,

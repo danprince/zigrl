@@ -61,7 +61,7 @@ pub fn increaseMaxHp(self: *Self, amount: isize) void {
 
 pub fn increasePower(self: *Self, amount: isize) void {
     if (self.entity.fighter) |*fighter| {
-        fighter.power += amount;
+        fighter.base_power += amount;
         engine.message_log.add("You feel stronger!", colors.white);
         self.increaseLevel();
     }
@@ -69,7 +69,7 @@ pub fn increasePower(self: *Self, amount: isize) void {
 
 pub fn increaseDefense(self: *Self, amount: isize) void {
     if (self.entity.fighter) |*fighter| {
-        fighter.defense += amount;
+        fighter.base_defense += amount;
         engine.message_log.add("Your movements are getting swifter!", colors.white);
         self.increaseLevel();
     }

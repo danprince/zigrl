@@ -12,8 +12,8 @@ const Self = @This();
 entity: *Entity = undefined,
 hp: isize = 0,
 max_hp: isize = 0,
-defense: isize = 0,
-power: isize = 0,
+base_defense: isize = 0,
+base_power: isize = 0,
 
 pub fn init(self: *Self, entity: *Entity) void {
     self.entity = entity;
@@ -22,6 +22,22 @@ pub fn init(self: *Self, entity: *Entity) void {
 
 pub fn deinit(self: *Self) void {
     _ = self;
+}
+
+pub fn defense(self: *const Self) isize {
+    return self.base_defense + self.defenseBonus();
+}
+
+pub fn defenseBonus(self: *const Self) isize {
+    return if (self.entity.equipment) |equipment| equipment.getDefenseBonus() else 0;
+}
+
+pub fn power(self: *const Self) isize {
+    return self.base_power + self.powerBonus();
+}
+
+pub fn powerBonus(self: *const Self) isize {
+    return if (self.entity.equipment) |equipment| equipment.getPowerBonus() else 0;
 }
 
 pub fn setHP(self: *Self, amount: isize) void {

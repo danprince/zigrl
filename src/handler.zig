@@ -39,6 +39,7 @@ const keys = struct {
     pub const g = 71; // Pickup
     pub const i = 73; // Use
     pub const d = 68; // Drop
+    pub const e = 69; // Equip
     pub const v = 86; // History
     pub const c = 67; // Character
 
@@ -72,6 +73,7 @@ pub const ModeType = enum {
     gameover,
     drop_item,
     use_item,
+    equip_item,
     look,
     target_point,
     target_area,
@@ -86,6 +88,7 @@ pub const Mode = union(ModeType) {
     gameover: void,
     drop_item: void,
     use_item: void,
+    equip_item: void,
     look: void,
     target_point: struct { item: *Entity },
     target_area: struct { item: *Entity, radius: isize },
@@ -220,13 +223,14 @@ fn onKeyDown(self: *Self, key: u8, mod: u8) ?EventResult {
             keys.g => act(actions.pickup()),
             keys.i => swap(.use_item),
             keys.d => swap(.drop_item),
+            keys.e => swap(.equip_item),
             keys.v => swap(.{ .history = .{} }),
             keys.c => swap(.character_screen),
             else => if (getMoveKey(key)) |move| {
                 return act(actions.bump(move[0], move[1]));
             } else null,
         },
-        .drop_item, .use_item => switch (key) {
+        .drop_item, .use_item, .equip_item => switch (key) {
             keys.a...keys.z => self.onSelectItem(key - keys.a),
             else => null,
         },
@@ -286,6 +290,7 @@ fn onSelectItem(self: *Self, index: usize) ?EventResult {
     var action: ?Action = switch (self.mode) {
         .drop_item => actions.drop(item),
         .use_item => if (item.consumable) |consumable| consumable.getAction() else null,
+        .equip_item => if (item.equippable) |_| actions.equip(item) else null,
         else => null,
     };
 
@@ -318,6 +323,7 @@ pub fn render(self: *Self, console: *Console) void {
     switch (self.mode) {
         .drop_item => self.renderItemSelection(console, "Drop which item?"),
         .use_item => self.renderItemSelection(console, "Use which item?"),
+        .equip_item => self.renderItemSelection(console, "Equip which item?"),
         .look, .target_point, .target_area => self.renderTargeting(console),
         .history => |*view| self.renderMessageHistory(console, view),
         .level_up => self.onLevelUpRender(console),
@@ -366,9 +372,10 @@ fn renderItemSelection(self: *Self, console: *Console, title: []const u8) void {
     var x: isize = 40;
     var y: isize = 0;
     if (engine.player.x > 30) x = 0;
-    const width = @intCast(isize, title.len + 4);
+    const width = 28;
     var height = @intCast(isize, number_of_items_in_inventory + 2);
     if (height < 3) height = 3;
+    const equipment = engine.player.equipment.?;
     console.box(x, y, width, height, colors.white, colors.black);
     console.write(x + 1, y, colors.black, colors.white, title);
 
@@ -376,7 +383,9 @@ fn renderItemSelection(self: *Self, console: *Console, title: []const u8) void {
         for (inventory.items.items) |item, index| {
             const i = @intCast(isize, index);
             const key = 'a' + @intCast(u8, index);
-            console.print(x + 1, y + 1 + i, colors.white, null, "({c}) {s}", .{ key, item.name });
+            const state = if (equipment.isItemEquipped(item)) "(E)" else "";
+            console.print(x + 1, y + 1 + i, colors.white, null, "({c})   {s} {s}", .{ key, item.name, state });
+            console.put(x + 5, y + 1 + i, item.color, null, item.char);
         }
     } else {
         console.write(x + 1, y + 1, colors.white, null, "(Empty)");
@@ -410,8 +419,8 @@ fn onLevelUpRender(self: *Self, console: *Console) void {
     console.write(x + 1, y + 1, colors.white, null, "Congratulations! You level up!");
     console.write(x + 1, y + 2, colors.white, null, "Select an attribute to increase.");
     console.print(x + 1, y + 4, colors.white, null, "a) Constitution (+20 HP, from {d})", .{fighter.max_hp});
-    console.print(x + 1, y + 5, colors.white, null, "b) Strength (+1 attack, from {d})", .{fighter.power});
-    console.print(x + 1, y + 6, colors.white, null, "c) Agility (+1 defense, from {d})", .{fighter.defense});
+    console.print(x + 1, y + 5, colors.white, null, "b) Strength (+1 attack, from {d})", .{fighter.base_power});
+    console.print(x + 1, y + 6, colors.white, null, "c) Agility (+1 defense, from {d})", .{fighter.base_defense});
 }
 
 fn onLevelUpKeydown(_: *Self, key: u8) ?EventResult {
@@ -440,8 +449,8 @@ fn onCharacterScreenRender(self: *Self, console: *Console) void {
     console.print(x + 1, y + 1, colors.white, null, "Level: {d}", .{level.current_level});
     console.print(x + 1, y + 2, colors.white, null, "XP: {d}", .{level.current_xp});
     console.print(x + 1, y + 3, colors.white, null, "XP for next level: {d}", .{level.experienceToNextLevel()});
-    console.print(x + 1, y + 4, colors.white, null, "Attack: {d}", .{fighter.power});
-    console.print(x + 1, y + 5, colors.white, null, "Defense: {d}", .{fighter.defense});
+    console.print(x + 1, y + 4, colors.white, null, "Attack: {d}", .{fighter.power()});
+    console.print(x + 1, y + 5, colors.white, null, "Defense: {d}", .{fighter.defense()});
 }
 
 fn onHelpRender(self: *Self, console: *Console) void {

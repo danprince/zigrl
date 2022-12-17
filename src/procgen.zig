@@ -176,12 +176,16 @@ fn placeEntities(
         const y = rng.intRangeAtMost(isize, room.y1 + 1, room.y2 - 1);
         if (dungeon.getFirstEntityAt(x, y) != null) continue;
 
-        if (rng.float(f32) < 0.7) {
+        if (rng.float(f32) < 0.5) {
             try dungeon.addEntityAt(x, y, entities.health_potion.spawn());
-        } else if (rng.float(f32) < 0.8) {
+        } else if (rng.float(f32) < 0.6) {
             try dungeon.addEntityAt(x, y, entities.fireball_scroll.spawn());
-        } else if (rng.float(f32) < 0.9) {
+        } else if (rng.float(f32) < 0.7) {
             try dungeon.addEntityAt(x, y, entities.confusion_scroll.spawn());
+        } else if (rng.float(f32) < 0.8) {
+            try dungeon.addEntityAt(x, y, entities.sword.spawn());
+        } else if (rng.float(f32) < 0.9) {
+            try dungeon.addEntityAt(x, y, entities.chainmail.spawn());
         } else {
             try dungeon.addEntityAt(x, y, entities.lightning_scroll.spawn());
         }

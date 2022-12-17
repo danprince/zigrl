@@ -14,6 +14,7 @@ pub const Message = struct {
 pub const MessageLog = struct {
     const Self = @This();
 
+    active: bool = false,
     messages: std.ArrayList(Message) = undefined,
     arena: std.heap.ArenaAllocator = undefined,
 
@@ -31,7 +32,9 @@ pub const MessageLog = struct {
     }
 
     pub fn add(self: *MessageLog, text: []const u8, fg: i32) void {
-        self.messages.append(.{ .text = text, .fg = fg }) catch unreachable;
+        if (self.active) {
+            self.messages.append(.{ .text = text, .fg = fg }) catch unreachable;
+        }
     }
 
     pub fn print(

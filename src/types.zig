@@ -6,6 +6,8 @@ const Ai = @import("components/ai.zig");
 const Consumable = @import("components/consumable.zig");
 const Inventory = @import("components/inventory.zig");
 const Level = @import("components/level.zig");
+const Equippable = @import("components/equippable.zig");
+const Equipment = @import("components/equipment.zig");
 const Allocator = std.mem.Allocator;
 const testing = std.testing;
 
@@ -55,6 +57,8 @@ pub const Entity = struct {
     consumable: ?Consumable = null,
     inventory: ?Inventory = null,
     level: ?Level = null,
+    equippable: ?Equippable = null,
+    equipment: ?Equipment = null,
     allocator: Allocator = undefined,
 
     /// Called internally when the entity is added to the engine. Use `spawn`
@@ -66,6 +70,8 @@ pub const Entity = struct {
         if (self.consumable) |*consumable| consumable.init(self);
         if (self.inventory) |*inventory| inventory.init(self, allocator);
         if (self.level) |*level| level.init(self);
+        if (self.equippable) |*equippable| equippable.init(self);
+        if (self.equipment) |*equipment| equipment.init(self);
     }
 
     pub fn deinit(self: *Self) void {
@@ -74,6 +80,8 @@ pub const Entity = struct {
         if (self.consumable) |*consumable| consumable.deinit(self);
         if (self.inventory) |*inventory| inventory.deinit(self);
         if (self.level) |*level| level.deinit(self);
+        if (self.equippable) |*equippable| equippable.deinit(self);
+        if (self.equipment) |*equipment| equipment.deinit();
     }
 
     /// Adds a copy of this entity into the engine and returns a pointer to it.

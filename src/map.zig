@@ -134,7 +134,7 @@ pub const Map = struct {
     /// no items here.
     pub fn getItemAt(self: *Self, x: isize, y: isize) ?*Entity {
         for (self.entities.items) |entity| {
-            if (entity.x == x and entity.y == y and entity.consumable != null) {
+            if (entity.x == x and entity.y == y and (entity.consumable != null or entity.equippable != null)) {
                 return entity;
             }
         }
