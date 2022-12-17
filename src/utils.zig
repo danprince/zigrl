@@ -256,3 +256,101 @@ test "PointSet" {
     try testing.expect(points.has(2, 2));
     try testing.expect(points.has(3, 3));
 }
+
+/// Returns an iterator that wraps text into lines of at most `max_width`
+/// characters, attempting to break on the last space in each line.
+pub fn textWrap(text: []const u8, max_width: usize) TextWrapIterator {
+    return .{
+        .text = text,
+        .max_width = max_width,
+    };
+}
+
+const TextWrapIterator = struct {
+    text: []const u8,
+    max_width: usize,
+    line_width: usize = 0,
+
+    pub fn next(self: *TextWrapIterator) ?[]const u8 {
+        if (self.text.len == 0) return null;
+        if (self.text[0] == ' ') self.text = self.text[1..];
+        var end = std.math.min(self.max_width, self.text.len);
+        var line = self.text[0..end];
+
+        // Break overflowing words at the last space
+        if (line.len == self.max_width) {
+            var last_space = std.mem.lastIndexOfScalar(u8, line, ' ');
+            if (last_space) |last_space_index| {
+                line = line[0..last_space_index];
+            }
+        }
+
+        self.text = self.text[line.len..];
+        return line;
+    }
+};
+
+test "textWrap" {
+    const cases = [_]struct {
+        max_width: usize,
+        actual: []const u8,
+        expect: []const u8,
+    }{
+        .{
+            .max_width = 15,
+            .actual = "hello world these are lines",
+            .expect = 
+            \\hello world
+            \\these are
+            \\lines
+            ,
+        },
+        .{
+            .max_width = 15,
+            .actual = "hello astronomical body these are lines",
+            .expect = 
+            \\hello
+            \\astronomical
+            \\body these are
+            \\lines
+            ,
+        },
+        .{
+            .max_width = 8,
+            .actual = "hello gargantuous world",
+            .expect = 
+            \\hello
+            \\gargantu
+            \\ous
+            \\world
+            ,
+        },
+        .{
+            .max_width = 40,
+            .actual = "Hello and welcome, adventurer, to yet another dungeon!",
+            .expect = 
+            \\Hello and welcome, adventurer, to yet
+            \\another dungeon!
+            ,
+        },
+        .{
+            .max_width = 40,
+            .actual = "Hello and welcome, adventurer, to yet another dungeon! This is a really obnoxiously long message.",
+            .expect = 
+            \\Hello and welcome, adventurer, to yet
+            \\another dungeon! This is a really
+            \\obnoxiously long message.
+            ,
+        },
+    };
+
+    for (cases) |case| {
+        var actual_iter = textWrap(case.actual, case.max_width);
+        var expect_iter = std.mem.tokenize(u8, case.expect, "\n");
+        while (expect_iter.next()) |expect_line| {
+            var actual_line = actual_iter.next().?;
+            try testing.expectEqualStrings(actual_line, expect_line);
+        }
+        try testing.expectEqual(actual_iter.next(), null);
+    }
+}

@@ -1,5 +1,6 @@
 const std = @import("std");
 const colors = @import("colors.zig");
+const utils = @import("utils.zig");
 const term = @import("term.zig");
 const testing = std.testing;
 const Console = term.Console;
@@ -46,15 +47,28 @@ pub const MessageLog = struct {
 
     pub fn render(self: *Self, console: *const Console) void {
         const messages = self.messages.items;
-
-        var i: usize = 0;
+        const max_width = @intCast(usize, console.width) - 1;
         var y_offset = console.height - 1;
 
+        // Iterate through messages in reverse to show the most recent message
+        // first (at the bottom).
+        var i: usize = 0;
         while (i < messages.len) : (i += 1) {
             const index = messages.len - 1 - i;
             const message = messages[index];
-            console.write(0, y_offset, message.fg, 0, message.text);
-            if (y_offset <= 0) break else y_offset -= 1;
+
+            // Take an informed guess at how many lines this text will split across.
+            var rows = @intCast(isize, message.text.len / max_width) + 1;
+            y_offset -= rows;
+            var y_cursor = y_offset;
+
+            var lines = utils.textWrap(message.text, max_width);
+            while (lines.next()) |line| {
+                console.write(3, y_cursor, message.fg, 0, line);
+                y_cursor += 1;
+            }
+
+            if (y_offset <= 0) break;
         }
     }
 };
