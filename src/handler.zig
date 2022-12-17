@@ -119,17 +119,23 @@ const Self = @This();
 
 mode: Mode,
 
+// Change the handler's current mode.
+pub fn setMode(self: *Self, mode: Mode) void {
+    self.mode = mode;
+    self.onChangeMode();
+}
+
 /// Triggers a game action, if possible, given an input event.
 pub fn handleEvent(self: *Self, event: InputEvent) void {
     if (self.dispatch(event)) |action_or_mode| {
         switch (action_or_mode) {
-            .mode => |new_mode| self.mode = new_mode,
+            .mode => |new_mode| self.setMode(new_mode),
             .action => |action| {
                 _ = self.handleAction(action);
                 if (!engine.player.isAlive()) {
-                    self.mode = .gameover;
+                    self.setMode(.gameover);
                 } else if (engine.player.level.?.requiresLevelUp()) {
-                    self.mode = .level_up;
+                    self.setMode(.level_up);
                 }
             },
         }
@@ -163,6 +169,17 @@ fn dispatch(self: *Self, event: InputEvent) ?EventResult {
         .pointermove => |pos| self.onMouseMove(pos.x, pos.y),
         .pointerdown => |pos| self.onMouseDown(pos.x, pos.y),
     };
+}
+
+/// Called whenever we change mode.
+fn onChangeMode(self: *Self) void {
+    switch (self.mode) {
+        .look, .target_area, .target_point => {
+            engine.mouse_location.x = engine.player.x;
+            engine.mouse_location.y = engine.player.y;
+        },
+        else => {},
+    }
 }
 
 /// Called whenever the mouse is moved.
@@ -371,14 +388,15 @@ fn renderTargeting(self: *Self, console: *Console) void {
     const x = engine.mouse_location.x;
     const y = engine.mouse_location.y;
     switch (self.mode) {
-        .target_point => {
-            const cell = console.get(x, y);
-            console.put(x, y, colors.black, colors.white, cell.ch);
-        },
         .target_area => |target| {
             console.box(x - target.radius, y - target.radius, target.radius * 2, target.radius * 2, colors.red, null);
         },
-        else => {},
+        else => {
+            //const cell = console.get(x, y);
+            //console.put(x, y, colors.black, colors.white, cell.ch);
+            console.box(x - 1, y - 1, 3, 3, 0x555555, null);
+            console.put(x + 1, y + 1, colors.white, null, 0x14);
+        },
     }
 }
 

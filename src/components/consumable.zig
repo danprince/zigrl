@@ -43,19 +43,15 @@ pub fn getAction(self: *const Self) ?Action {
 
     switch (self.kind) {
         .confusion => {
-            engine.mouse_location.x = engine.player.x;
-            engine.mouse_location.y = engine.player.y;
-            engine.handler.mode = .{ .target_point = .{ .item = self.entity } };
+            engine.handler.setMode(.{ .target_point = .{ .item = self.entity } });
         },
         .fireball_damage => |fireball| {
-            engine.mouse_location.x = engine.player.x;
-            engine.mouse_location.y = engine.player.y;
-            engine.handler.mode = .{
+            engine.handler.setMode(.{
                 .target_area = .{
                     .item = self.entity,
                     .radius = fireball.radius,
                 },
-            };
+            });
         },
         else => action = actions.use(self.entity),
     }
