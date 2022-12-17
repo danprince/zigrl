@@ -149,6 +149,40 @@ pub const Console = struct {
             }
         }
     }
+
+    const BoxDrawingChars = [6]u8;
+    const box_chars: BoxDrawingChars = .{ 0x80, 0x81, 0x82, 0x83, 0x84, 0x85 };
+    const frame_chars: BoxDrawingChars = .{ 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B };
+
+    pub fn boxWithChars(self: *const Console, x: isize, y: isize, w: isize, h: isize, fg: ?i32, bg: ?i32, chars: BoxDrawingChars) void {
+        self.fillRect(x, y, w - 1, h - 1, fg, bg, 0);
+        self.put(x, y, fg, bg, chars[2]);
+        self.put(x + w - 1, y, fg, bg, chars[3]);
+        self.put(x, y + h - 1, fg, bg, chars[4]);
+        self.put(x + w - 1, y + h - 1, fg, bg, chars[5]);
+
+        var i: u8 = 1;
+        while (i < w - 1) : (i += 1) {
+            self.put(x + i, y, fg, bg, chars[0]);
+            self.put(x + i, y + h - 1, fg, bg, chars[0]);
+        }
+
+        var j: u8 = 1;
+        while (j < h - 1) : (j += 1) {
+            self.put(x, y + j, fg, bg, chars[1]);
+            self.put(x + w - 1, y + j, fg, bg, chars[1]);
+        }
+
+        return;
+    }
+
+    pub fn box(console: *Console, x: isize, y: isize, w: isize, h: isize, fg: ?i32, bg: ?i32) void {
+        boxWithChars(console, x, y, w, h, fg, bg, box_chars);
+    }
+
+    pub fn frame(console: *Console, x: isize, y: isize, w: isize, h: isize, fg: ?i32, bg: ?i32) void {
+        boxWithChars(console, x, y, w, h, fg, bg, frame_chars);
+    }
 };
 
 test "rendering to string" {
@@ -246,4 +280,22 @@ test "console isInBounds" {
     try testing.expect(!console.isInBounds(5, 0));
     try testing.expect(!console.isInBounds(0, -1));
     try testing.expect(!console.isInBounds(0, 11));
+}
+
+test "console boxWithChars" {
+    var term = try Terminal.init(6, 6, testing.allocator);
+    defer term.deinit();
+    const chars: Console.BoxDrawingChars = .{ '-', '|', 'a', 'b', 'c', 'd' };
+    term.root().boxWithChars(1, 2, 3, 4, null, null, chars);
+
+    const output = try term.toString();
+    defer testing.allocator.free(output);
+    try testing.expectEqualStrings(
+        \\      
+        \\      
+        \\ a-b  
+        \\ | |  
+        \\ | |  
+        \\ c-d  
+    , output);
 }
