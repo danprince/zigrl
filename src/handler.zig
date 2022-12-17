@@ -78,6 +78,7 @@ pub const ModeType = enum {
     history,
     level_up,
     character_screen,
+    help,
 };
 
 pub const Mode = union(ModeType) {
@@ -91,6 +92,7 @@ pub const Mode = union(ModeType) {
     history: ScrollView,
     level_up: void,
     character_screen: void,
+    help: void,
 };
 
 const EventResultType = enum { action, mode };
@@ -196,11 +198,11 @@ fn onKeyDown(self: *Self, key: u8, mod: u8) ?EventResult {
     return switch (self.mode) {
         .main => switch (key) {
             keys.period => if (mod & modifiers.shift > 0) act(actions.takeStairs()) else act(actions.wait()),
+            keys.slash => if (mod & modifiers.shift > 0) swap(.help) else swap(.look),
             keys.space => act(actions.wait()),
             keys.g => act(actions.pickup()),
             keys.i => swap(.use_item),
             keys.d => swap(.drop_item),
-            keys.slash => swap(.look),
             keys.v => swap(.{ .history = .{} }),
             keys.c => swap(.character_screen),
             else => if (getMoveKey(key)) |move| {
@@ -242,6 +244,7 @@ fn onKeyDown(self: *Self, key: u8, mod: u8) ?EventResult {
             }
         },
         .level_up => self.onLevelUpKeydown(key),
+        .help => self.onExit(),
         else => null,
     };
 }
@@ -302,6 +305,7 @@ pub fn render(self: *Self, console: *Console) void {
         .history => |*view| self.renderMessageHistory(console, view),
         .level_up => self.onLevelUpRender(console),
         .character_screen => self.onCharacterScreenRender(console),
+        .help => self.onHelpRender(console),
         else => self.renderGameView(console),
     }
 }
@@ -420,6 +424,25 @@ fn onCharacterScreenRender(self: *Self, console: *Console) void {
     console.print(x + 1, y + 3, colors.white, null, "XP for next level: {d}", .{level.experienceToNextLevel()});
     console.print(x + 1, y + 4, colors.white, null, "Attack: {d}", .{fighter.power});
     console.print(x + 1, y + 5, colors.white, null, "Defense: {d}", .{fighter.defense});
+}
+
+fn onHelpRender(self: *Self, console: *Console) void {
+    self.renderGameView(console);
+    const x: isize = if (engine.player.x <= 30) 40 else 0;
+    const y: isize = 0;
+    console.box(x, y, 25, 13, colors.white, null);
+    console.write(x + 1, y, colors.black, colors.white, "Help");
+    console.print(x + 1, y + 1, colors.white, null, "{c}/{c}/{c}/{c} Move (cardinal)", .{ 0x10, 0x11, 0x12, 0x13 });
+    console.print(x + 1, y + 2, colors.white, null, "{c}/{c}/{c}/{c} Move (cardinal)", .{ 'h', 'j', 'k', 'l' });
+    console.print(x + 1, y + 3, colors.white, null, "{c}/{c}/{c}/{c} Move (diagonal)", .{ 'y', 'u', 'b', 'n' });
+    console.print(x + 1, y + 4, colors.white, null, "{c} Pickup item", .{'g'});
+    console.print(x + 1, y + 5, colors.white, null, "{c} Use an item", .{'i'});
+    console.print(x + 1, y + 6, colors.white, null, "{c} Drop an item", .{'d'});
+    console.print(x + 1, y + 7, colors.white, null, "{c} Message history", .{'v'});
+    console.print(x + 1, y + 8, colors.white, null, "{c} Character stats", .{'c'});
+    console.print(x + 1, y + 9, colors.white, null, "{c} Take stairs", .{'>'});
+    console.print(x + 1, y + 10, colors.white, null, "{c} Look around", .{'/'});
+    console.print(x + 1, y + 11, colors.white, null, "{c} Wait", .{'.'});
 }
 
 fn getMoveKey(key: u8) ?struct { isize, isize } {

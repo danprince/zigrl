@@ -97,4 +97,5 @@ pub fn render(console: *Console) void {
 
     widgets.renderDungeonLevel(console, world.current_floor, 0, 47);
     widgets.renderNamesAtMouseLocation(console, 21, 44);
+    console.write(0, 49, 0x555555, null, "Press ? for help");
 }
