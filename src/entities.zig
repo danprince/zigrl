@@ -1,6 +1,7 @@
 const std = @import("std");
 const types = @import("types.zig");
 const colors = @import("colors.zig");
+const Ai = @import("components/ai.zig");
 const rgb = colors.rgb;
 const Entity = types.Entity;
 
@@ -21,7 +22,7 @@ pub const orc = Entity{
     .blocks_movement = true,
     .render_order = .actor,
     .fighter = .{ .hp = 10, .defense = 0, .power = 3 },
-    .ai = .{ .behaviour = .hostile },
+    .ai = Ai.with(.hostile),
     .inventory = .{ .capacity = 0 },
 };
 
@@ -32,7 +33,7 @@ pub const troll = Entity{
     .blocks_movement = true,
     .render_order = .actor,
     .fighter = .{ .hp = 16, .defense = 1, .power = 4 },
-    .ai = .{ .behaviour = .hostile },
+    .ai = Ai.with(.hostile),
     .inventory = .{ .capacity = 0 },
 };
 
@@ -50,4 +51,20 @@ pub const lightning_scroll = Entity{
     .name = "Lightning Scroll",
     .render_order = .item,
     .consumable = .{ .kind = .{ .lightning_damage = .{ .damage = 20, .maximum_range = 5 } } },
+};
+
+pub const confusion_scroll = Entity{
+    .char = '~',
+    .color = rgb(207, 63, 255),
+    .name = "Confusion Scroll",
+    .render_order = .item,
+    .consumable = .{ .kind = .{ .confusion = .{ .number_of_turns = 10 } } },
+};
+
+pub const fireball_scroll = Entity{
+    .char = '~',
+    .color = rgb(255, 0, 0),
+    .name = "Fireball Scroll",
+    .render_order = .item,
+    .consumable = .{ .kind = .{ .fireball_damage = .{ .damage = 12, .radius = 3 } } },
 };

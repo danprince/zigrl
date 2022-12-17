@@ -1,6 +1,7 @@
 const std = @import("std");
 const utils = @import("utils.zig");
 const term = @import("term.zig");
+const rng = @import("rng.zig");
 const host = @import("host.zig");
 const errors = @import("errors.zig");
 const input = @import("input.zig");
@@ -21,6 +22,7 @@ var terminal: term.Terminal = undefined;
 
 fn init(seed: u64) !void {
     try registry.init(gpa.allocator());
+    rng.init(seed);
 
     var player = entities.player;
 
@@ -92,4 +94,5 @@ pub fn panic(msg: []const u8, trace: ?*std.builtin.StackTrace, ret_addr: ?usize)
 test {
     _ = @import("colors.zig");
     _ = @import("map.zig");
+    _ = @import("rng.zig");
 }

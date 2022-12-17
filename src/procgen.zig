@@ -172,6 +172,10 @@ fn placeEntities(
 
         if (rng.float(f32) < 0.7) {
             try dungeon.addEntityAt(x, y, entities.health_potion.spawn());
+        } else if (rng.float(f32) < 0.8) {
+            try dungeon.addEntityAt(x, y, entities.fireball_scroll.spawn());
+        } else if (rng.float(f32) < 0.9) {
+            try dungeon.addEntityAt(x, y, entities.confusion_scroll.spawn());
         } else {
             try dungeon.addEntityAt(x, y, entities.lightning_scroll.spawn());
         }

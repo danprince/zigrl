@@ -116,6 +116,16 @@ pub const Map = struct {
         return null;
     }
 
+    /// Returns the first entity with AI at given coordinates.
+    pub fn getActorAt(self: *Self, x: isize, y: isize) ?*Entity {
+        for (self.entities.items) |entity| {
+            if (entity.x == x and entity.y == y and entity.ai != null) {
+                return entity;
+            }
+        }
+        return null;
+    }
+
     /// Returns the first item at these coordinates, or null if there are
     /// no items here.
     pub fn getItemAt(self: *Self, x: isize, y: isize) ?*Entity {

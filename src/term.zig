@@ -181,7 +181,10 @@ pub const Console = struct {
     const frame_chars: BoxDrawingChars = .{ 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B };
 
     pub fn boxWithChars(self: *const Console, x: isize, y: isize, w: isize, h: isize, fg: ?i32, bg: ?i32, chars: BoxDrawingChars) void {
-        self.fillRect(x, y, w - 1, h - 1, fg, bg, 0);
+        if (bg != null) {
+            self.fillRect(x, y, w - 1, h - 1, fg, bg, 0);
+        }
+
         self.put(x, y, fg, bg, chars[2]);
         self.put(x + w - 1, y, fg, bg, chars[3]);
         self.put(x, y + h - 1, fg, bg, chars[4]);

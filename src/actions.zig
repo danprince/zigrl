@@ -2,6 +2,7 @@ const types = @import("types.zig");
 const engine = @import("engine.zig");
 const utils = @import("utils.zig");
 const colors = @import("colors.zig");
+const Vec = types.Vec;
 const Entity = types.Entity;
 
 pub const ActionType = enum {
@@ -19,7 +20,7 @@ pub const Action = union(ActionType) {
     move: struct { dx: isize, dy: isize },
     melee: struct { dx: isize, dy: isize },
     bump: struct { dx: isize, dy: isize },
-    use: *Entity,
+    use: struct { item: *Entity, target: ?Vec = null },
     pickup: void,
     drop: *Entity,
 };
@@ -59,7 +60,11 @@ pub fn bump(dx: isize, dy: isize) Action {
 }
 
 pub fn use(item: *Entity) Action {
-    return .{ .use = item };
+    return .{ .use = .{ .item = item } };
+}
+
+pub fn useAtTarget(item: *Entity, x: isize, y: isize) Action {
+    return .{ .use = .{ .item = item, .target = .{ .x = x, .y = y } } };
 }
 
 pub fn pickup() Action {
@@ -130,9 +135,9 @@ pub fn perform(any_action: Action, entity: *Entity) ActionResult {
                 return perform(move(movement.dx, movement.dy), entity);
             }
         },
-        .use => |item| {
-            if (item.consumable) |*consumable| {
-                return consumable.activate(entity);
+        .use => |action| {
+            if (action.item.consumable) |*consumable| {
+                return consumable.activate(entity, action.target);
             } else {
                 return failure("You can't use this");
             }

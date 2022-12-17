@@ -8,6 +8,7 @@ const types = @import("types.zig");
 const Vec = types.Vec;
 const Action = actions.Action;
 const Console = term.Console;
+const Entity = types.Entity;
 
 const modifiers = struct {
     pub const shift = 1;
@@ -82,6 +83,8 @@ pub const Mode = enum {
     drop_item,
     use_item,
     look,
+    target_point,
+    target_area,
 };
 
 pub const EventHandler = union(Mode) {
@@ -92,6 +95,8 @@ pub const EventHandler = union(Mode) {
     drop_item: void,
     use_item: void,
     look: void,
+    target_point: struct { item: *Entity },
+    target_area: struct { item: *Entity, radius: isize },
 
     fn dispatch(self: Self, event: InputEvent) ?Action {
         return switch (event) {
@@ -103,7 +108,7 @@ pub const EventHandler = union(Mode) {
 
     fn onMouseDown(self: Self, x: isize, y: isize) ?Action {
         switch (self) {
-            .look => self.onSelectIndex(x, y),
+            .look, .target_point, .target_area => self.onSelectIndex(x, y),
             else => {},
         }
         return null;
@@ -132,7 +137,7 @@ pub const EventHandler = union(Mode) {
                 keys.a...keys.z => self.onSelectItem(key - keys.a),
                 else => {},
             },
-            .look => {
+            .look, .target_point, .target_area => {
                 switch (key) {
                     keys.enter => self.onSelectIndex(engine.mouse_location.x, engine.mouse_location.y),
                     keys.shift => {},
@@ -167,7 +172,9 @@ pub const EventHandler = union(Mode) {
         if (engine.player.inventory.?.getItemAtIndex(index)) |item| {
             switch (self) {
                 .drop_item => action = actions.drop(item),
-                .use_item => action = actions.use(item),
+                .use_item => if (item.consumable) |consumable| {
+                    action = consumable.getAction();
+                },
                 else => {},
             }
         } else {
@@ -190,8 +197,16 @@ pub const EventHandler = union(Mode) {
     }
 
     fn onSelectIndex(self: Self, x: isize, y: isize) void {
-        _ = y;
-        _ = x;
+        switch (self) {
+            .target_point => |target| {
+                _ = actions.perform(actions.useAtTarget(target.item, x, y), &engine.player);
+            },
+            .target_area => |target| {
+                _ = actions.perform(actions.useAtTarget(target.item, x, y), &engine.player);
+            },
+            else => {},
+        }
+
         self.onExit();
     }
 
@@ -228,7 +243,7 @@ pub const EventHandler = union(Mode) {
         switch (self) {
             .drop_item => self.renderItemSelection(console, "Drop which item?"),
             .use_item => self.renderItemSelection(console, "Use which item?"),
-            .look => self.renderTargeting(console),
+            .look, .target_point, .target_area => self.renderTargeting(console),
             else => self.renderGameView(console),
         }
     }
@@ -263,7 +278,17 @@ pub const EventHandler = union(Mode) {
 
     fn renderTargeting(self: Self, console: *Console) void {
         self.renderGameView(console);
-        const cell = console.get(engine.mouse_location.x, engine.mouse_location.y);
-        console.put(engine.mouse_location.x, engine.mouse_location.y, colors.black, colors.white, cell.ch);
+        const x = engine.mouse_location.x;
+        const y = engine.mouse_location.y;
+        switch (self) {
+            .target_point => {
+                const cell = console.get(x, y);
+                console.put(x, y, colors.black, colors.white, cell.ch);
+            },
+            .target_area => |target| {
+                console.box(x - target.radius, y - target.radius, target.radius * 2, target.radius * 2, colors.red, null);
+            },
+            else => {},
+        }
     }
 };
