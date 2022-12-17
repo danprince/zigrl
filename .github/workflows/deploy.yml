@@ -9,11 +9,19 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: goto-bus-stop/setup-zig@v2
-      - run: zig fmt --check src
-      - run: zig build test
-      - run: zig build -Drelease-small=true
-      - run: rm web/dist/*.{so,o}*
-      - run: cd web && zip ../game.zip -r *
-      - run: "curl -H 'Content-Type: application/zip' -H 'Authorization: Bearer ${{ secrets.NETLIFY_ACCESS_TOKEN }}' --data-binary '@game.zip' https://api.netlify.com/api/v1/sites/${{ secrets.NETLIFY_SITE_ID }}/deploys"
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v2
+      - name: ⚡️ Setup Zig
+        uses: goto-bus-stop/setup-zig@v2
+      - name: 🔎 Lint
+        run: zig fmt --check src
+      - name: 🧪 Test
+        run: zig build test
+      - name: 🔨 Build
+        run: zig build -Drelease-small=true
+      - name: 🗑️ Clean
+        run: rm web/dist/*.{so,o}*
+      - name: 📦 Zip
+        run: cd web && zip ../game.zip -r *
+      - name: ☁️ Deploy
+        run: "curl -H 'Content-Type: application/zip' -H 'Authorization: Bearer ${{ secrets.NETLIFY_ACCESS_TOKEN }}' --data-binary '@game.zip' https://api.netlify.com/api/v1/sites/${{ secrets.NETLIFY_SITE_ID }}/deploys"
