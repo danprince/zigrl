@@ -44,6 +44,12 @@ pub fn die(self: *Self) void {
     } else {
         engine.message_log.print("{s} is dead!", .{self.entity.name}, colors.enemy_die);
     }
+
+    if (engine.player.level) |*player_level| {
+        if (self.entity.level) |entity_level| {
+            player_level.addXp(entity_level.xp_given);
+        }
+    }
 }
 
 pub fn damage(self: *Self, amount: isize) isize {

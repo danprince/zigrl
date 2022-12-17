@@ -13,6 +13,7 @@ pub const player = Entity{
     .render_order = .actor,
     .fighter = .{ .hp = 30, .defense = 2, .power = 5 },
     .inventory = .{ .capacity = 26 },
+    .level = .{ .level_up_base = 200, .current_xp = 350 },
 };
 
 pub const orc = Entity{
@@ -24,6 +25,7 @@ pub const orc = Entity{
     .fighter = .{ .hp = 10, .defense = 0, .power = 3 },
     .ai = Ai.with(.hostile),
     .inventory = .{ .capacity = 0 },
+    .level = .{ .xp_given = 35 },
 };
 
 pub const troll = Entity{
@@ -35,6 +37,7 @@ pub const troll = Entity{
     .fighter = .{ .hp = 16, .defense = 1, .power = 4 },
     .ai = Ai.with(.hostile),
     .inventory = .{ .capacity = 0 },
+    .level = .{ .xp_given = 100 },
 };
 
 pub const health_potion = Entity{

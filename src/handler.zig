@@ -40,6 +40,7 @@ const keys = struct {
     pub const i = 73; // Use
     pub const d = 68; // Drop
     pub const v = 86; // History
+    pub const c = 67; // Character
 
     // Other keys
     pub const enter = 13;
@@ -75,6 +76,8 @@ pub const ModeType = enum {
     target_point,
     target_area,
     history,
+    level_up,
+    character_screen,
 };
 
 pub const Mode = union(ModeType) {
@@ -86,6 +89,8 @@ pub const Mode = union(ModeType) {
     target_point: struct { item: *Entity },
     target_area: struct { item: *Entity, radius: isize },
     history: ScrollView,
+    level_up: void,
+    character_screen: void,
 };
 
 const EventResultType = enum { action, mode };
@@ -121,6 +126,8 @@ pub fn handleEvent(self: *Self, event: InputEvent) void {
                 _ = self.handleAction(action);
                 if (!engine.player.isAlive()) {
                     self.mode = .gameover;
+                } else if (engine.player.level.?.requiresLevelUp()) {
+                    self.mode = .level_up;
                 }
             },
         }
@@ -190,6 +197,7 @@ fn onKeyDown(self: *Self, key: u8, mod: u8) ?EventResult {
             keys.d => swap(.drop_item),
             keys.slash => swap(.look),
             keys.v => swap(.{ .history = .{} }),
+            keys.c => swap(.character_screen),
             else => if (getMoveKey(key)) |move| {
                 return act(actions.bump(move[0], move[1]));
             } else null,
@@ -228,6 +236,7 @@ fn onKeyDown(self: *Self, key: u8, mod: u8) ?EventResult {
                 return self.onExit();
             }
         },
+        .level_up => self.onLevelUpKeydown(key),
         else => null,
     };
 }
@@ -235,7 +244,7 @@ fn onKeyDown(self: *Self, key: u8, mod: u8) ?EventResult {
 /// Called when the user attempts to exit the current handler mode.
 fn onExit(self: *Self) ?EventResult {
     return switch (self.mode) {
-        .main, .gameover => null,
+        .main, .gameover, .level_up => null,
         else => swap(.main),
     };
 }
@@ -286,6 +295,8 @@ pub fn render(self: *Self, console: *Console) void {
         .use_item => self.renderItemSelection(console, "Use which item?"),
         .look, .target_point, .target_area => self.renderTargeting(console),
         .history => |*view| self.renderMessageHistory(console, view),
+        .level_up => self.onLevelUpRender(console),
+        .character_screen => self.onCharacterScreenRender(console),
         else => self.renderGameView(console),
     }
 }
@@ -360,6 +371,50 @@ fn renderTargeting(self: *Self, console: *Console) void {
         },
         else => {},
     }
+}
+
+fn onLevelUpRender(self: *Self, console: *Console) void {
+    self.renderGameView(console);
+    const x: isize = if (engine.player.x <= 30) 40 else 0;
+    const y: isize = 0;
+    const fighter = engine.player.fighter.?;
+    console.box(x, y, 35, 8, colors.white, null);
+    console.write(x + 1, y, colors.black, colors.white, "Level Up");
+    console.write(x + 1, y + 1, colors.white, null, "Congratulations! You level up!");
+    console.write(x + 1, y + 2, colors.white, null, "Select an attribute to increase.");
+    console.print(x + 1, y + 4, colors.white, null, "a) Constitution (+20 HP, from {d})", .{fighter.max_hp});
+    console.print(x + 1, y + 5, colors.white, null, "b) Strength (+1 attack, from {d})", .{fighter.power});
+    console.print(x + 1, y + 6, colors.white, null, "c) Agility (+1 defense, from {d})", .{fighter.defense});
+}
+
+fn onLevelUpKeydown(_: *Self, key: u8) ?EventResult {
+    var level = &engine.player.level.?;
+    const index = key - keys.a;
+    switch (index) {
+        0 => level.increaseMaxHp(20),
+        1 => level.increasePower(1),
+        2 => level.increaseDefense(1),
+        else => {
+            engine.message_log.add("Invalid entry", colors.invalid);
+            return null;
+        },
+    }
+    return swap(.main);
+}
+
+fn onCharacterScreenRender(self: *Self, console: *Console) void {
+    self.renderGameView(console);
+    const fighter = engine.player.fighter.?;
+    const level = engine.player.level.?;
+    const x: isize = if (engine.player.x <= 30) 40 else 0;
+    const y: isize = 0;
+    console.box(x, y, 25, 7, colors.white, null);
+    console.write(x + 1, y, colors.black, colors.white, "Character Information");
+    console.print(x + 1, y + 1, colors.white, null, "Level: {d}", .{level.current_level});
+    console.print(x + 1, y + 2, colors.white, null, "XP: {d}", .{level.current_xp});
+    console.print(x + 1, y + 3, colors.white, null, "XP for next level: {d}", .{level.experienceToNextLevel()});
+    console.print(x + 1, y + 4, colors.white, null, "Attack: {d}", .{fighter.power});
+    console.print(x + 1, y + 5, colors.white, null, "Defense: {d}", .{fighter.defense});
 }
 
 fn getMoveKey(key: u8) ?struct { isize, isize } {
