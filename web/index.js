@@ -232,7 +232,11 @@ export function screenToGrid(screenX, screenY) {
  * @param {KeyboardEvent} event
  */
 function handleKeyDown(event) {
-  exports.onKeyDown(event.which);
+  let mod = 0;
+  if (event.shiftKey) mod |= 1;
+  if (event.altKey) mod |= 2;
+  if (event.ctrlKey) mod |= 4;
+  exports.onKeyDown(event.which, mod);
 }
 
 /**

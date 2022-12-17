@@ -6,6 +6,12 @@ const colors = @import("colors.zig");
 const Action = actions.Action;
 const Console = term.Console;
 
+const modifiers = struct {
+    pub const shift = 1;
+    pub const alt = 2;
+    pub const ctrl = 4;
+};
+
 const keys = struct {
     // Arrow keys
     pub const left_arrow = 37;
@@ -31,9 +37,14 @@ const keys = struct {
     pub const d = 68; // Drop
 
     // Other keys
+    pub const enter = 13;
+    pub const shift = 16;
+    pub const ctrl = 17;
+    pub const alt = 18;
     pub const esc = 27;
     pub const space = 32;
     pub const period = 190;
+    pub const slash = 191;
 };
 
 pub const InputEventType = enum {
@@ -43,7 +54,7 @@ pub const InputEventType = enum {
 };
 
 pub const InputEvent = union(InputEventType) {
-    keydown: u8,
+    keydown: struct { key: u8, modifiers: u8 },
     pointermove: struct { x: isize, y: isize },
     pointerdown: struct { x: isize, y: isize },
 };
@@ -65,13 +76,12 @@ pub const EventHandler = union(Mode) {
 
     fn dispatch(self: Self, event: InputEvent) ?Action {
         return switch (event) {
-            .keydown => |key| self.onKeyDown(key),
+            .keydown => |key_event| self.onKeyDown(key_event.key, key_event.modifiers),
             .pointermove => |pos| self.onMouseMove(pos.x, pos.y),
-            else => null,
         };
     }
 
-    fn onKeyDown(self: Self, key: usize) ?Action {
+    fn onKeyDown(self: Self, key: u8, mod: u8) ?Action {
         if (key == keys.esc) {
             self.onExit();
             return null;
