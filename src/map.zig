@@ -109,6 +109,13 @@ pub const Map = struct {
         return null;
     }
 
+    /// Returns an iterator which yields each of the entities at this position.
+    /// The iterator will be invalidated if the map's entity list is modified
+    /// during iteration.
+    pub fn getEntitiesAt(self: *Self, x: isize, y: isize) EntitiesAtIterator {
+        return .{ .map = self, .x = x, .y = y };
+    }
+
     /// Render the map to a console.
     pub fn render(self: *Self, console: *Console) void {
         var y: isize = 0;
@@ -128,6 +135,23 @@ pub const Map = struct {
                 console.put(entity.x, entity.y, entity.color, null, entity.char);
             }
         }
+    }
+};
+
+const EntitiesAtIterator = struct {
+    map: *Map,
+    x: isize,
+    y: isize,
+    index: usize = 0,
+
+    pub fn next(self: *EntitiesAtIterator) ?*Entity {
+        for (self.map.entities.items[self.index..]) |entity| {
+            self.index += 1;
+            if (entity.x == self.x and entity.y == self.y) {
+                return entity;
+            }
+        }
+        return null;
     }
 };
 
@@ -246,4 +270,22 @@ test "Map.getBlockingEntityAt" {
     try map.addEntity(&non_blocker);
     try map.addEntity(&blocker);
     try testing.expectEqual(map.getBlockingEntityAt(1, 2), &blocker);
+}
+
+test "Map.getEntitiesAt" {
+    var map = try Map.init(.{ .width = 10, .height = 10, .initial_tile = test_tile, .allocator = testing.allocator });
+    defer map.deinit();
+    var a = Entity.tester("a");
+    var b = Entity.tester("b");
+    var c = Entity.tester("c");
+    var d = Entity.tester("d");
+    try map.addEntityAt(4, 5, &a);
+    try map.addEntityAt(4, 5, &b);
+    try map.addEntityAt(4, 5, &c);
+    try map.addEntityAt(5, 4, &d);
+    var iter = map.getEntitiesAt(4, 5);
+    try testing.expectEqual(iter.next(), &a);
+    try testing.expectEqual(iter.next(), &b);
+    try testing.expectEqual(iter.next(), &c);
+    try testing.expectEqual(iter.next(), null);
 }

@@ -68,12 +68,12 @@ pub const Entity = struct {
         self.y += dy;
     }
 
-    pub fn tester() Entity {
+    pub fn tester(name: []const u8) Entity {
         return .{
             .char = 'T',
             .color = 0xFF0000,
             .blocks_movement = false,
-            .name = "Tester",
+            .name = name,
         };
     }
 
@@ -83,11 +83,11 @@ pub const Entity = struct {
 };
 
 test "Entity.compareByRenderOrder" {
-    var a = Entity.tester();
+    var a = Entity.tester("a");
     a.render_order = .corpse;
-    var b = Entity.tester();
+    var b = Entity.tester("b");
     b.render_order = .item;
-    var c = Entity.tester();
+    var c = Entity.tester("c");
     c.render_order = .actor;
     var entities = &[_]*Entity{ &c, &a, &b };
     std.sort.sort(*Entity, entities, {}, Entity.compareByRenderOrder);
