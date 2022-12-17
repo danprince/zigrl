@@ -2,6 +2,7 @@ const std = @import("std");
 const utils = @import("utils.zig");
 const types = @import("types.zig");
 const term = @import("term.zig");
+const colors = @import("colors.zig");
 const gamemap = @import("map.zig");
 const widgets = @import("widgets.zig");
 const actions = @import("actions.zig");
@@ -89,13 +90,32 @@ pub fn render(console: *Console) void {
     if (player.fighter) |fighter| {
         widgets.renderBar(
             console,
+            0,
+            45,
+            "HP",
             fighter.hp,
             fighter.max_hp,
             20,
+            colors.bar_filled,
+            colors.bar_empty,
         );
     }
 
-    widgets.renderDungeonLevel(console, world.current_floor, 0, 47);
+    if (player.level) |level| {
+        widgets.renderBar(
+            console,
+            0,
+            46,
+            "XP",
+            @intCast(isize, level.current_xp),
+            @intCast(isize, level.experienceToNextLevel()),
+            20,
+            0x008888,
+            0x003333,
+        );
+    }
+
     widgets.renderNamesAtMouseLocation(console, 21, 44);
+    widgets.renderDungeonLevel(console, world.current_floor, 0, 48);
     console.write(0, 49, 0x555555, null, "Press ? for help");
 }

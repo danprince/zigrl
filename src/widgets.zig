@@ -6,20 +6,29 @@ const Console = term.Console;
 
 pub fn renderBar(
     console: *Console,
+    x: isize,
+    y: isize,
+    label: []const u8,
     current_value: isize,
     maximum_value: isize,
     total_width: isize,
+    fill_color: ?i32,
+    empty_color: ?i32,
 ) void {
     const percent = @intToFloat(f32, current_value) / @intToFloat(f32, maximum_value);
     const bar_width = @floatToInt(isize, percent * @intToFloat(f32, total_width));
 
-    console.fillRect(0, 45, total_width, 1, null, colors.bar_empty, ' ');
+    console.fillRect(x, y, total_width, 1, null, empty_color, ' ');
 
     if (bar_width > 0) {
-        console.fillRect(0, 45, bar_width, 1, null, colors.bar_filled, ' ');
+        console.fillRect(x, y, bar_width, 1, null, fill_color, ' ');
     }
 
-    console.print(1, 45, colors.bar_text, null, "HP: {d}/{d}", .{ current_value, maximum_value });
+    console.print(x + 1, y, colors.bar_text, null, "{s}: {d}/{d}", .{
+        label,
+        current_value,
+        maximum_value,
+    });
 }
 
 pub fn renderNamesAtMouseLocation(console: *Console, x: isize, y: isize) void {
