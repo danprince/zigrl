@@ -1,6 +1,12 @@
 const std = @import("std");
 const testing = std.testing;
 
+const Cell = struct {
+    fg: i32,
+    bg: i32,
+    ch: u8,
+};
+
 /// Terminals contains the raw character/color data for rendering.
 pub const Terminal = struct {
     allocator: std.mem.Allocator,
@@ -12,8 +18,10 @@ pub const Terminal = struct {
     /// that can store 24 bit colors, and still keep the door open for negative
     /// values in future.
     ///
+    /// ```
     /// | 'H' | 0xAABBCC | 0x112233 | 'e' | 0xCCBBAA | 0x332211 | ...
     ///  char   fg_color   bg_color   char  fg_color   bg_color
+    /// ```
     buffer: []i32,
 
     /// The step required between each cell when iterating through the buffer.
@@ -53,6 +61,16 @@ pub const Terminal = struct {
         self.buffer[index] = ch;
         if (fg) |color| self.buffer[index + 1] = color;
         if (bg) |color| self.buffer[index + 2] = color;
+    }
+
+    /// Get the char/color at a specific cell inside the bounds of the terminal.
+    pub fn get(self: *Terminal, x: usize, y: usize) Cell {
+        const index = (x + y * self.width) * buffer_step;
+        return .{
+            .ch = @intCast(u8, self.buffer[index]),
+            .fg = self.buffer[index + 1],
+            .bg = self.buffer[index + 2],
+        };
     }
 
     /// Creates a root console
@@ -121,6 +139,14 @@ pub const Console = struct {
             if (term_x < 0 or term_y < 0) return;
             self.terminal.put(@intCast(usize, term_x), @intCast(usize, term_y), fg, bg, ch);
         }
+    }
+
+    /// Retrieve the color/char from the cell at the given coordinates.
+    pub fn get(self: *Console, x: isize, y: isize) Cell {
+        return self.terminal.get(
+            @intCast(usize, self.x + x),
+            @intCast(usize, self.y + y),
+        );
     }
 
     /// Write a colored string string into the console at specific coordinates.

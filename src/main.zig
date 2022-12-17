@@ -66,8 +66,8 @@ export fn onFrame() void {
     host.flushTerm(terminal.buffer.ptr, terminal.buffer.len);
 }
 
-export fn onKeyDown(key: u8) void {
-    engine.event_handler.handleEvent(.{ .keydown = key });
+export fn onKeyDown(key: u8, modifiers: u8) void {
+    engine.event_handler.handleEvent(.{ .keydown = .{ .key = key, .modifiers = modifiers } });
 }
 
 export fn onPointerMove(x: isize, y: isize) void {

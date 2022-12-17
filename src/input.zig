@@ -1,8 +1,11 @@
+const std = @import("std");
 const actions = @import("actions.zig");
 const engine = @import("engine.zig");
 const term = @import("term.zig");
 const utils = @import("utils.zig");
 const colors = @import("colors.zig");
+const types = @import("types.zig");
+const Vec = types.Vec;
 const Action = actions.Action;
 const Console = term.Console;
 
@@ -47,6 +50,20 @@ const keys = struct {
     pub const slash = 191;
 };
 
+fn getMoveKey(key: u8) ?struct { isize, isize } {
+    return switch (key) {
+        keys.h, keys.left_arrow => .{ -1, 0 },
+        keys.l, keys.right_arrow => .{ 1, 0 },
+        keys.k, keys.up_arrow => .{ 0, -1 },
+        keys.j, keys.down_arrow => .{ 0, 1 },
+        keys.y => .{ -1, -1 },
+        keys.u => .{ 1, -1 },
+        keys.b => .{ -1, 1 },
+        keys.n => .{ 1, 1 },
+        else => null,
+    };
+}
+
 pub const InputEventType = enum {
     keydown,
     pointermove,
@@ -64,6 +81,7 @@ pub const Mode = enum {
     gameover,
     drop_item,
     use_item,
+    look,
 };
 
 pub const EventHandler = union(Mode) {
@@ -73,12 +91,22 @@ pub const EventHandler = union(Mode) {
     gameover: void,
     drop_item: void,
     use_item: void,
+    look: void,
 
     fn dispatch(self: Self, event: InputEvent) ?Action {
         return switch (event) {
             .keydown => |key_event| self.onKeyDown(key_event.key, key_event.modifiers),
             .pointermove => |pos| self.onMouseMove(pos.x, pos.y),
+            .pointerdown => |pos| self.onMouseDown(pos.x, pos.y),
         };
+    }
+
+    fn onMouseDown(self: Self, x: isize, y: isize) ?Action {
+        switch (self) {
+            .look => self.onSelectIndex(x, y),
+            else => {},
+        }
+        return null;
     }
 
     fn onKeyDown(self: Self, key: u8, mod: u8) ?Action {
@@ -92,22 +120,40 @@ pub const EventHandler = union(Mode) {
         switch (self) {
             .main => switch (key) {
                 keys.space, keys.period => action = actions.wait(),
-                keys.h, keys.left_arrow => action = actions.bump(-1, 0),
-                keys.l, keys.right_arrow => action = actions.bump(1, 0),
-                keys.k, keys.up_arrow => action = actions.bump(0, -1),
-                keys.j, keys.down_arrow => action = actions.bump(0, 1),
-                keys.y => action = actions.bump(-1, -1),
-                keys.u => action = actions.bump(1, -1),
-                keys.b => action = actions.bump(-1, 1),
-                keys.n => action = actions.bump(1, 1),
                 keys.g => action = actions.pickup(),
                 keys.i => engine.event_handler = .use_item,
                 keys.d => engine.event_handler = .drop_item,
-                else => {},
+                keys.slash => engine.event_handler = .look,
+                else => if (getMoveKey(key)) |move| {
+                    action = actions.bump(move[0], move[1]);
+                },
             },
             .drop_item, .use_item => switch (key) {
                 keys.a...keys.z => self.onSelectItem(key - keys.a),
                 else => {},
+            },
+            .look => {
+                switch (key) {
+                    keys.enter => self.onSelectIndex(engine.mouse_location.x, engine.mouse_location.y),
+                    keys.shift => {},
+                    else => {
+                        var speed: isize = 1;
+                        if (mod & modifiers.shift > 0) speed *= 5;
+
+                        if (getMoveKey(key)) |move| {
+                            var x = engine.mouse_location.x;
+                            var y = engine.mouse_location.y;
+                            x += move[0] * speed;
+                            y += move[1] * speed;
+                            x = std.math.clamp(x, 0, engine.map.width - 1);
+                            y = std.math.clamp(y, 0, engine.map.height - 1);
+                            engine.mouse_location.x = x;
+                            engine.mouse_location.y = y;
+                        } else {
+                            self.onExit();
+                        }
+                    },
+                }
             },
             else => {},
         }
@@ -143,6 +189,12 @@ pub const EventHandler = union(Mode) {
         }
     }
 
+    fn onSelectIndex(self: Self, x: isize, y: isize) void {
+        _ = y;
+        _ = x;
+        self.onExit();
+    }
+
     fn onMouseMove(_: Self, x: isize, y: isize) ?Action {
         engine.mouse_location.x = x;
         engine.mouse_location.y = y;
@@ -176,6 +228,7 @@ pub const EventHandler = union(Mode) {
         switch (self) {
             .drop_item => self.renderItemSelection(console, "Drop which item?"),
             .use_item => self.renderItemSelection(console, "Use which item?"),
+            .look => self.renderTargeting(console),
             else => self.renderGameView(console),
         }
     }
@@ -206,5 +259,11 @@ pub const EventHandler = union(Mode) {
         } else {
             console.write(x + 1, y + 1, colors.white, null, "(Empty)");
         }
+    }
+
+    fn renderTargeting(self: Self, console: *Console) void {
+        self.renderGameView(console);
+        const cell = console.get(engine.mouse_location.x, engine.mouse_location.y);
+        console.put(engine.mouse_location.x, engine.mouse_location.y, colors.black, colors.white, cell.ch);
     }
 };
