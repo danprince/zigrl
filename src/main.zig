@@ -10,6 +10,7 @@ const engine = @import("engine.zig");
 const gamemap = @import("map.zig");
 const entities = @import("entities.zig");
 const procgen = @import("procgen.zig");
+const registry = @import("registry.zig");
 const colors = @import("colors.zig");
 const Handler = @import("handler.zig");
 const testing = std.testing;
@@ -21,6 +22,7 @@ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var terminal: term.Terminal = undefined;
 
 fn init(seed: u64) !void {
+    try registry.init(gpa.allocator());
     rng.init(seed);
 
     try engine.init(.{
