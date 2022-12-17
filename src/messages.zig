@@ -64,7 +64,7 @@ pub const MessageLog = struct {
 
             var lines = utils.textWrap(message.text, max_width);
             while (lines.next()) |line| {
-                console.write(3, y_cursor, message.fg, 0, line);
+                console.write(0, y_cursor, message.fg, 0, line);
                 y_cursor += 1;
             }
 
